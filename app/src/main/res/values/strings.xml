@@ -1,0 +1,42 @@
+<resources>
+    <string name="app_name">LxPlayer</string>
+    <string name="action_settings">设置</string>
+    <string name="title_playlist">播放列表</string>
+    <string name="menu_playlist_refresh">重建播放列表</string>
+    <string name="menu_playlist_add">增加文件</string>
+    <string name="menu_playlist_clear">清空列表</string>
+    <string name="menu_playlist_pop_delete">从列表中移除</string>
+    <string name="menu_playlist_deleteChosen">移除选定项目</string>
+    <string name="menu_playlist_choose">选择多项</string>
+    <string name="option_loop_on">单曲循环</string>
+    <string name="option_loop_off">无循环</string>
+    <string name="option_random_off">顺序播放</string>
+    <string name="option_random_on">随机播放</string>
+    <string name="button_play">播放</string>
+    <string name="button_pause">暂停</string>
+    <string name="button_backward">上一曲</string>
+    <string name="button_forward">下一曲</string>
+    <string name="label_playing">正在播放：</string>
+    <string name="label_stopped">请选择文件</string>
+    <string name="label_playtime" formatted="false">%d:%02d/%d:%02d</string>
+    <string name="menu_main_stop">停止播放</string>
+    <string name="menu_main_about">帮助</string>
+    <string name="message_about">这是一个简易的音乐播放器。\n* 该程序只能在安卓6.0及以上系统中安装。\n\n线控说明：\n0.5秒内双击为切换下一曲，长按0.5秒为切换上一曲，单击为播放/暂停。\n\n制作：lxfly2000\n程序源码：%s</string>
+    <string name="url_author">https://github.com/lxfly2000/lxplayer</string>
+    <string name="button_visitUrl">访问网站</string>
+    <string name="menu_main_speedUp">加速</string>
+    <string name="menu_main_speedDown">减速</string>
+    <string name="message_error_apilevel">该功能要求安卓版本至少为6.0.</string>
+    <string name="message_indebug">程序以调试模式运行。</string>
+    <string name="menu_exitApp">关闭程序</string>
+    <string name="message_error_randomOnLoop">循环开启时无效。</string>
+    <string name="message_unknownOperation">未知操作。</string>
+    <string name="message_error_permission_exstorage">无法查询文件信息，请检查应用是否有读取外置存储卡的权限。</string>
+    <string name="title_chooseFile">选择文件</string>
+    <string name="message_no_filechooser">没有可用的文件浏览器。</string>
+    <string name="message_cannot_catchFilepath">未获取到文件，请选择其他浏览器。</string>
+    <string name="message_file_exists">播放列表中已经有该文件了。</string>
+    <string name="message_notification">点击此处打开播放器。</string>
+    <string name="menu_keep_speed">切换时保持速度(%.1fx)</string>
+    <string name="app_identifier">lxplayer</string>
+</resources>

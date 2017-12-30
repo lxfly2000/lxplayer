@@ -1,0 +1,13 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools"
+      tools:context="io.github.lxfly2000.lxplayer.PlaylistActivity">
+    <item android:id="@+id/action_playlist_popup_play"
+          android:title="@string/button_play"
+          android:orderInCategory="101"
+          app:showAsAction="never"/>
+    <item android:id="@+id/action_playlist_popup_del"
+          android:title="@string/menu_playlist_pop_delete"
+          android:orderInCategory="102"
+          app:showAsAction="never"/>
+</menu>

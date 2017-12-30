@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools"
+      tools:context="io.github.lxfly2000.lxplayer.PlaylistActivity">
+    <item android:id="@+id/action_playlist_refresh"
+          android:title="@string/menu_playlist_refresh"
+          android:orderInCategory="100"
+          app:showAsAction="never"/>
+    <item android:id="@+id/action_playlist_add"
+          android:title="@string/menu_playlist_add"
+          android:orderInCategory="101"
+          app:showAsAction="never"/>
+    <item android:id="@+id/action_playlist_clear"
+          android:title="@string/menu_playlist_clear"
+          android:orderInCategory="102"
+          app:showAsAction="never"/>
+</menu>
