@@ -79,9 +79,10 @@ public class MainActivity extends AppCompatActivity {
         toggleRandom.setOnClickListener(mainClickListener);
         seekTime=(SeekBar)findViewById(R.id.seekBar);
         seekTime.setOnSeekBarChangeListener(seekListener);
-        dbHelper=ListDataHelper.getInstance(this);
+        dbHelper=ListDataHelper.getInstance(getApplicationContext());
         playerPreferences=getPreferences(MODE_PRIVATE);
 
+        //检查权限设置
         if(checkCallingOrSelfPermission("android.permission.READ_EXTERNAL_STORAGE")!= PackageManager.PERMISSION_GRANTED){
             AlertDialog.Builder about=new AlertDialog.Builder(this);
             about.setTitle(R.string.app_name);
@@ -97,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        //启动服务，初始化播放列表
         if(dbHelper.GetDataCount()==0){
             listIsLoading=true;
             Intent intent=new Intent(this,PlaylistActivity.class);
@@ -105,12 +107,22 @@ public class MainActivity extends AppCompatActivity {
         }else {
             CanBindService();
         }
+        //注册播放列表广播接收器
         registerReceiver(playerReceiver,new IntentFilter(getPackageName()));
 
+        //注册线控回调
         lineControlSession=new MediaSession(this,getString(R.string.app_name));
         lineControlSession.setCallback(lineControlCallback);
         lineControlSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS|MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
         lineControlSession.setActive(true);
+
+        //注册通知栏广播接收器
+        IntentFilter fiNotification=new IntentFilter();
+        fiNotification.addAction(PlayerService.ACTION_UPDATE_MAIN_INTERFACE);
+        registerReceiver(notificationReceiver,fiNotification);
+
+        //检测更新
+        CheckForUpdate(true);
     }
 
     private MediaSession.Callback lineControlCallback=new MediaSession.Callback() {
@@ -134,6 +146,13 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
             return super.onMediaButtonEvent(mediaButtonIntent);
+        }
+    };
+
+    private BroadcastReceiver notificationReceiver=new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            UpdateInterfaces(-1);
         }
     };
 
@@ -175,13 +194,15 @@ public class MainActivity extends AppCompatActivity {
         toggleRandom.setChecked(playerService.IsRandomOn());
         if(playerService.IsPlaying())buttonPlay.setImageResource(android.R.drawable.ic_media_pause);
         else buttonPlay.setImageResource(android.R.drawable.ic_media_play);
-        textTitle.setText(dbHelper.GetTitleByIndex(musicIndex==-1?playerService.GetListCurrentPos():musicIndex));
         timeInfo.SetTotal(playerService.GetPlayingTotalTime_Ms());
         seekTime.setMax(playerService.GetPlayingTotalTime_Ms());
         UpdateSeekbar();
         if(playerService.IsPlaying())SetTimerOn(true);
-        imageView.setImageBitmap(ArtworkUtils.getArtwork(getApplicationContext(),dbHelper.GetTitleByIndex(playerService.GetListCurrentPos()),
-                dbHelper.GetIdByIndex(playerService.GetListCurrentPos()),dbHelper.GetAlbumIdByIndex(playerService.GetListCurrentPos()),true));
+        if(dbHelper.GetDataCount()>0) {
+            textTitle.setText(dbHelper.GetTitleByIndex(musicIndex == -1 ? playerService.GetListCurrentPos() : musicIndex));
+            imageView.setImageBitmap(ArtworkUtils.getArtwork(getApplicationContext(), dbHelper.GetTitleByIndex(playerService.GetListCurrentPos()),
+                    dbHelper.GetIdByIndex(playerService.GetListCurrentPos()), dbHelper.GetAlbumIdByIndex(playerService.GetListCurrentPos()), true));
+        }
     }
 
     @Override
@@ -214,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_speedDown:OnChangePlaybackSpeed(false);return true;
             case R.id.action_exitApp:ExitApplication(false);return true;
             case R.id.action_keep_speed:OnToggleKeepSpeed();return true;
+            case R.id.action_check_update:CheckForUpdate(false);return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -316,7 +338,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void OnAbout(){
-        String infoAbout=String.format(getString(R.string.message_about),getString(R.string.url_author));
+        String infoAbout=String.format(getString(R.string.message_about),
+                BuildConfig.VERSION_NAME,BuildConfig.BUILD_DATE,getString(R.string.url_author));
         AlertDialog.Builder about=new AlertDialog.Builder(this);
         about.setTitle(R.string.app_name);
         about.setMessage(infoAbout);
@@ -406,8 +429,17 @@ public class MainActivity extends AppCompatActivity {
     private void ExitApplication(boolean activityOnly){
         if(!activityOnly) {
             OnStopPlayer();
+            if(notificationReceiver!=null){
+                unregisterReceiver(notificationReceiver);
+                notificationReceiver=null;
+            }
+            if(playerReceiver!=null) {
+                unregisterReceiver(playerReceiver);
+                playerReceiver=null;
+            }
             lineControlSession.release();
             playerService.ReleaseService();
+            unbindService(mConnection);
             stopService(new Intent(this, PlayerService.class));
         }
         finish();
@@ -417,6 +449,37 @@ public class MainActivity extends AppCompatActivity {
         playerService.SetKeepSpeed(!playerService.IsKeepSpeed());
         menuKeepSpeed.setChecked(playerService.IsKeepSpeed());
         playerPreferences.edit().putBoolean(keyKeepSpeed,playerService.IsKeepSpeed()).apply();
+    }
+
+    private void CheckForUpdate(boolean onlyReportNewVersion){
+        UpdateChecker checker=new UpdateChecker(getString(R.string.url_check_update));
+        AlertDialog.Builder msgbox=new AlertDialog.Builder(this);
+        msgbox.setTitle(R.string.menu_check_update);
+        if(checker.CheckForUpdate()) {
+            String msg=String.format(getString(R.string.message_new_version),BuildConfig.VERSION_NAME,checker.GetUpdateVersionNameFromStream());
+            msgbox.setMessage(msg);
+            msgbox.setIcon(android.R.drawable.ic_dialog_info);
+            msgbox.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    Intent intent=new Intent(Intent.ACTION_VIEW);
+                    intent.setData(Uri.parse(getString(R.string.url_check_update)));
+                    startActivity(intent);
+                }
+            });
+            msgbox.setNegativeButton(android.R.string.cancel,null);
+        }else if(onlyReportNewVersion){
+            return;
+        }else if(checker.IsError()){
+            msgbox.setMessage(R.string.error_check_update);
+            msgbox.setMessage("该功能尚在制作中。");//TODO：更新功能完成后删除该行。
+            msgbox.setIcon(android.R.drawable.ic_dialog_alert);
+            msgbox.setPositiveButton(android.R.string.ok,null);
+        }else {
+            msgbox.setMessage(R.string.message_no_update);
+            msgbox.setPositiveButton(android.R.string.ok,null);
+        }
+        msgbox.show();
     }
 }
 

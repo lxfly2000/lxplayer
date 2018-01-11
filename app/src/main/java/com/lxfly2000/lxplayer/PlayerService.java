@@ -1,9 +1,13 @@
 package com.lxfly2000.lxplayer;
 
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.Build;
@@ -11,18 +15,44 @@ import android.os.IBinder;
 import android.support.annotation.RequiresApi;
 
 public class PlayerService extends Service {
-    private MediaPlayer player;
+    private MediaPlayer player=null;
     private boolean isRandom=false,isLoop=false;
     private ListDataHelper dh;
     private final IBinder mBinder=new LocalBinder();
     private int playlistCurrentPos=0;
     private boolean keepSpeed=false;
     private float playbackSpeed=1.0f;
+    private static final String ACTION_BACKWARD =BuildConfig.APPLICATION_ID+".Backward";
+    private static final String ACTION_FORWARD =BuildConfig.APPLICATION_ID+".Forward";
+    private static final String ACTION_TOGGLE_PLAY =BuildConfig.APPLICATION_ID+".TogglePlay";
+    public static final String ACTION_UPDATE_MAIN_INTERFACE=BuildConfig.APPLICATION_ID+".UpdateInterface";
+    private NotificationManager notificationManager;
+    private int notifyId=0;
     private MediaPlayer.OnCompletionListener nextMusicListener=new MediaPlayer.OnCompletionListener() {
         @Override
         public void onCompletion(MediaPlayer mediaPlayer) {
             if(!IsLoopOn())SetNextMusic(true);
             Play();
+            UpdateNotificationBar(false);
+        }
+    };
+
+    private BroadcastReceiver notificationReceiver=new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action=intent.getAction();
+            if(action.equals(ACTION_BACKWARD)){
+                SetNextMusic(false);
+            }else if(action.equals(ACTION_FORWARD)){
+                SetNextMusic(true);
+            }else if(action.equals(ACTION_TOGGLE_PLAY)){
+                if(IsPlaying()){
+                    Pause(false);
+                }else {
+                    Play();
+                }
+            }
+            UpdateNotificationBar(true);
         }
     };
 
@@ -42,6 +72,11 @@ public class PlayerService extends Service {
         player=new MediaPlayer();
         if(dh.GetDataCount()>0)SetPlayIndex(playlistCurrentPos);
         player.setOnCompletionListener(nextMusicListener);
+        IntentFilter fiNotification=new IntentFilter();
+        fiNotification.addAction(ACTION_FORWARD);
+        fiNotification.addAction(ACTION_BACKWARD);
+        fiNotification.addAction(ACTION_TOGGLE_PLAY);
+        registerReceiver(notificationReceiver,fiNotification);
         return mBinder;
     }
 
@@ -52,16 +87,9 @@ public class PlayerService extends Service {
 
     @Override
     public int onStartCommand(Intent intent,int flags,int startId){
-        //参考：http://blog.csdn.net/yyingwei/article/details/8509402
-        Intent notificationIntent=new Intent(this,MainActivity.class);
-        PendingIntent pendingIntent=PendingIntent.getActivity(this,0,notificationIntent,0);
-        Notification notification=new Notification.Builder(this)
-                .setContentTitle(getText(R.string.app_name))
-                .setContentText(getText(R.string.message_notification))
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentIntent(pendingIntent)
-                .build();
-        startForeground(startId,notification);
+        notifyId=startId;
+        notificationManager=(NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        UpdateNotificationBar(false);
         return super.onStartCommand(intent,flags,startId);
     }
 
@@ -72,6 +100,10 @@ public class PlayerService extends Service {
     }
 
     public void ReleaseService(){
+        if(notificationReceiver!=null) {
+            unregisterReceiver(notificationReceiver);
+            notificationReceiver=null;
+        }
         player.stop();
         stopForeground(true);
     }
@@ -83,6 +115,7 @@ public class PlayerService extends Service {
             player.setDataSource(dh.GetPathByIndex(index));
             player.prepare();
             playlistCurrentPos=index;
+            UpdateNotificationBar(false);
         }catch (java.io.IOException e){
             //return;
         }
@@ -91,6 +124,7 @@ public class PlayerService extends Service {
     public void SetPlayId(int id){
         try {
             player.setDataSource(dh.GetPathById(id));
+            UpdateNotificationBar(false);
         }catch (java.io.IOException e){
             //return;
         }
@@ -99,6 +133,7 @@ public class PlayerService extends Service {
     public void Play(){
         player.start();
         if(keepSpeed)SetPlaybackSpeed(GetPlaybackSpeed());
+        UpdateNotificationBar(false);
     }
 
     /**
@@ -110,6 +145,7 @@ public class PlayerService extends Service {
             player.pause();
         if(stop)
             SetPlayingPos_Ms(0);
+        UpdateNotificationBar(false);
     }
 
     public void SetLoop(boolean loop){
@@ -149,6 +185,47 @@ public class PlayerService extends Service {
         Intent intent=new Intent(getPackageName());
         intent.putExtra("SelectedIndex",playlistCurrentPos);
         sendBroadcast(intent);
+    }
+
+    private void UpdateNotificationBar(boolean updateMainActivity){
+        ListDataHelper dbHelper=ListDataHelper.getInstance(getApplicationContext());
+        //参考：http://blog.csdn.net/yyingwei/article/details/8509402
+        Intent notificationIntent=new Intent(this,MainActivity.class);
+        PendingIntent pendingIntent=PendingIntent.getActivity(this,0,notificationIntent,0);
+        Intent iBackward=new Intent(ACTION_BACKWARD);
+        Intent iTogglePlay=new Intent(ACTION_TOGGLE_PLAY);
+        Intent iForward=new Intent(ACTION_FORWARD);
+        PendingIntent piBackward=PendingIntent.getBroadcast(this,0,iBackward,0);
+        PendingIntent piTogglePlay=PendingIntent.getBroadcast(this,0,iTogglePlay,0);
+        PendingIntent piForward=PendingIntent.getBroadcast(this,0,iForward,0);
+        Notification.MediaStyle style=new Notification.MediaStyle()
+                .setShowActionsInCompactView(1);
+        Notification.Builder notifBuilder=new Notification.Builder(this);
+        notifBuilder.setContentText(getText(R.string.app_name));
+        notifBuilder.setSmallIcon(R.mipmap.ic_launcher);
+        if(dbHelper.GetDataCount()>0) {
+            notifBuilder.setContentTitle(dbHelper.GetTitleByIndex(GetListCurrentPos()));
+            notifBuilder.setLargeIcon(ArtworkUtils.getArtwork(getApplicationContext(), dbHelper.GetTitleByIndex(GetListCurrentPos()),
+                    dbHelper.GetIdByIndex(GetListCurrentPos()), dbHelper.GetAlbumIdByIndex(GetListCurrentPos()), true));
+        }
+        notifBuilder.setContentIntent(pendingIntent);
+        notifBuilder.addAction(android.R.drawable.ic_media_previous,getString(R.string.button_backward),piBackward);
+        if(player!=null&&IsPlaying()) {
+            notifBuilder.addAction(android.R.drawable.ic_media_pause, getString(R.string.button_pause), piTogglePlay);
+        }else {
+            notifBuilder.addAction(android.R.drawable.ic_media_play, getString(R.string.button_play), piTogglePlay);
+        }
+        notifBuilder.addAction(android.R.drawable.ic_media_next,getString(R.string.button_forward),piForward);
+        notifBuilder.setStyle(style);
+        Notification notification=notifBuilder.build();
+        if(player==null) {
+            startForeground(notifyId, notification);
+        }else {
+            notificationManager.notify(notifyId,notification);
+        }
+        if(updateMainActivity){
+            sendBroadcast(new Intent(ACTION_UPDATE_MAIN_INTERFACE));
+        }
     }
 
     public int GetPlayingPos_Ms(){

@@ -10,6 +10,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        buildConfigField "String","BUILD_DATE",getBuildDate()
     }
     buildTypes {
         release {
@@ -19,6 +20,12 @@ android {
     }
     productFlavors {
     }
+}
+
+def getBuildDate(){
+    Date date=new Date();
+    String date_string="\""+date.format("yyyy-M-d")+"\"";
+    return date_string;
 }
 
 dependencies {
