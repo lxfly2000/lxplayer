@@ -54,7 +54,7 @@ public class UpdateChecker {
         Pattern p=Pattern.compile(searchRegex);
         Matcher m=p.matcher(fileContentString);
         if(m.find()){
-            String subRegex="[0-9]*";
+            String subRegex="[0-9]*$";
             Pattern pSub=Pattern.compile(subRegex);
             String subFound=fileContentString.substring(m.start(),m.end());
             Matcher mSub=pSub.matcher(subFound);
@@ -119,7 +119,6 @@ class DownloadFileTask extends AsyncTask<String,Integer,Boolean>{
                 break;
             getString.append(newString).append("\n");
         }
-        stream.reset();
         return getString.toString();
     }
     @Override
