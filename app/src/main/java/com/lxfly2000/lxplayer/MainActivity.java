@@ -121,6 +121,10 @@ public class MainActivity extends AppCompatActivity {
         fiNotification.addAction(PlayerService.ACTION_UPDATE_MAIN_INTERFACE);
         registerReceiver(notificationReceiver,fiNotification);
 
+        //注册检查更新广播接收器
+        IntentFilter fiUpdate=new IntentFilter();
+        fiUpdate.addAction(ACTION_CHECK_UPDATE_RESULT);
+        registerReceiver(checkUpdateReceiver,fiUpdate);
         //检测更新
         CheckForUpdate(true);
     }
@@ -196,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
         else buttonPlay.setImageResource(android.R.drawable.ic_media_play);
         timeInfo.SetTotal(playerService.GetPlayingTotalTime_Ms());
         seekTime.setMax(playerService.GetPlayingTotalTime_Ms());
-        UpdateSeekbar();
+        UpdateSeekBar();
         if(playerService.IsPlaying())SetTimerOn(true);
         if(dbHelper.GetDataCount()>0) {
             textTitle.setText(dbHelper.GetTitleByIndex(musicIndex == -1 ? playerService.GetListCurrentPos() : musicIndex));
@@ -264,7 +268,7 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar.OnSeekBarChangeListener seekListener=new SeekBar.OnSeekBarChangeListener() {
         @Override
         public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-            textTime.setText(timeInfo.GetFormattedString(seekBar.getProgress()));
+            textTime.setText(timeInfo.GetFormattedString(seekBar.getProgress(),getString(R.string.label_playtime)));
         }
 
         @Override
@@ -404,7 +408,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void handleMessage(Message msg){
             switch (msg.what){
-                case R.id.seekBar:UpdateSeekbar();break;
+                case R.id.seekBar:
+                    UpdateSeekBar();break;
             }
             super.handleMessage(msg);
         }
@@ -419,10 +424,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void UpdateSeekbar(){
+    private void UpdateSeekBar(){
         if(!seekBarIsSeeking){
             seekTime.setProgress(playerService.GetPlayingPos_Ms());
-            textTime.setText(timeInfo.GetFormattedString(playerService.GetPlayingPos_Ms()));
+            textTime.setText(timeInfo.GetFormattedString(playerService.GetPlayingPos_Ms(),getString(R.string.label_playtime)));
         }
     }
 
@@ -436,6 +441,10 @@ public class MainActivity extends AppCompatActivity {
             if(playerReceiver!=null) {
                 unregisterReceiver(playerReceiver);
                 playerReceiver=null;
+            }
+            if(checkUpdateReceiver!=null){
+                unregisterReceiver(checkUpdateReceiver);
+                checkUpdateReceiver=null;
             }
             lineControlSession.release();
             playerService.ReleaseService();
@@ -451,35 +460,68 @@ public class MainActivity extends AppCompatActivity {
         playerPreferences.edit().putBoolean(keyKeepSpeed,playerService.IsKeepSpeed()).apply();
     }
 
-    private void CheckForUpdate(boolean onlyReportNewVersion){
-        UpdateChecker checker=new UpdateChecker(getString(R.string.url_check_update));
-        AlertDialog.Builder msgbox=new AlertDialog.Builder(this);
-        msgbox.setTitle(R.string.menu_check_update);
-        if(checker.CheckForUpdate()) {
-            String msg=String.format(getString(R.string.message_new_version),BuildConfig.VERSION_NAME,checker.GetUpdateVersionNameFromStream());
-            msgbox.setMessage(msg);
-            msgbox.setIcon(android.R.drawable.ic_dialog_info);
-            msgbox.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    Intent intent=new Intent(Intent.ACTION_VIEW);
-                    intent.setData(Uri.parse(getString(R.string.url_check_update)));
-                    startActivity(intent);
-                }
-            });
-            msgbox.setNegativeButton(android.R.string.cancel,null);
-        }else if(onlyReportNewVersion){
-            return;
-        }else if(checker.IsError()){
-            msgbox.setMessage(R.string.error_check_update);
-            msgbox.setMessage("该功能尚在制作中。");//TODO：更新功能完成后删除该行。
-            msgbox.setIcon(android.R.drawable.ic_dialog_alert);
-            msgbox.setPositiveButton(android.R.string.ok,null);
-        }else {
-            msgbox.setMessage(R.string.message_no_update);
-            msgbox.setPositiveButton(android.R.string.ok,null);
+    private static final String INTENT_EXTRA_UPDATE_ONLY="onlyUpdate";
+    private static final String INTENT_EXTRA_FOUND_UPDATE="foundUpdate";
+    private static final String ACTION_CHECK_UPDATE_RESULT=BuildConfig.APPLICATION_ID+".CheckUpdateResult";
+    private UpdateChecker updateChecker=null;
+
+    private BroadcastReceiver checkUpdateReceiver=new BroadcastReceiver(){
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            boolean onlyReportNewVersion=intent.getBooleanExtra(INTENT_EXTRA_UPDATE_ONLY,true);
+            boolean foundNewVersion=intent.getBooleanExtra(INTENT_EXTRA_FOUND_UPDATE,false);
+            AlertDialog.Builder msgBox=new AlertDialog.Builder(context);//这里不能用getApplicationContext.
+            msgBox.setPositiveButton(android.R.string.ok,null);
+            msgBox.setTitle(R.string.menu_check_update);
+            if (foundNewVersion) {
+                String msg = String.format(getString(R.string.message_new_version), BuildConfig.VERSION_NAME, updateChecker.GetUpdateVersionName());
+                msgBox.setMessage(msg);
+                msgBox.setIcon(android.R.drawable.ic_dialog_info);
+                msgBox.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Intent intent=new Intent(Intent.ACTION_VIEW);
+                        intent.setData(Uri.parse(getString(R.string.url_check_update)));
+                        startActivity(intent);
+                    }
+                });
+                msgBox.setNegativeButton(android.R.string.cancel,null);
+            }else if (onlyReportNewVersion){
+                return;
+            }else if (updateChecker.IsError()){
+                msgBox.setMessage(R.string.error_check_update);
+                msgBox.setIcon(android.R.drawable.ic_dialog_alert);
+            }else {
+                msgBox.setMessage(R.string.message_no_update);
+            }
+            msgBox.show();
         }
-        msgbox.show();
+    };
+
+    private void CheckForUpdate(boolean onlyReportNewVersion) {
+        if (updateChecker == null) {
+            updateChecker = new UpdateChecker().SetCheckURL(getString(R.string.url_check_update));
+        }
+        updateChecker.SetResultHandler(new UpdateChecker.ResultHandler(this) {
+            @Override
+            protected void OnReceive(boolean foundNewVersion) {
+                Intent intent = new Intent(ACTION_CHECK_UPDATE_RESULT);
+                intent.putExtra(INTENT_EXTRA_FOUND_UPDATE, foundNewVersion);
+                intent.putExtra(INTENT_EXTRA_UPDATE_ONLY, GetOnlyReportUpdate());
+                HandlerSendBroadcast(intent);
+            }
+        }.SetOnlyReportUpdate(onlyReportNewVersion));
+        if (checkCallingOrSelfPermission("android.permission.INTERNET") != PackageManager.PERMISSION_GRANTED) {
+            if (onlyReportNewVersion)
+                return;
+            AlertDialog.Builder msgBox = new AlertDialog.Builder(this)
+                    .setTitle(R.string.menu_check_update)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .setMessage(R.string.error_permission_network);
+            msgBox.show();
+        } else {
+            updateChecker.CheckForUpdate();
+        }
     }
 }
 
@@ -496,8 +538,8 @@ class TimeInfo{
         total_min=_total_ms/60;
         total_sec=_total_ms%60;
     }
-    public String GetFormattedString(int cur_ms){
+    public String GetFormattedString(int cur_ms,final String fmtString){
         cur_ms/=1000;
-        return String.format("%d:%02d/%d:%02d",cur_ms/60,cur_ms%60,total_min,total_sec);
+        return String.format(fmtString,cur_ms/60,cur_ms%60,total_min,total_sec);
     }
 }
