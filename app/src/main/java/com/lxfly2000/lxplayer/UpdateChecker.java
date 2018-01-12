@@ -43,10 +43,9 @@ public class UpdateChecker {
         fileContentString=data;
         if(fileContentString==null){
             errorOccurred=true;
-        }else if (GetUpdateVersionCode()>BuildConfig.VERSION_CODE){
-            resultHandler.OnReceive(true);
+        }else {
+            resultHandler.OnReceive(GetUpdateVersionCode()>BuildConfig.VERSION_CODE);
         }
-        resultHandler.OnReceive(false);
     }
 
     public int GetUpdateVersionCode(){
