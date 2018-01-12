@@ -481,7 +481,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         Intent intent=new Intent(Intent.ACTION_VIEW);
-                        intent.setData(Uri.parse(getString(R.string.url_check_update)));
+                        intent.setData(Uri.parse(getString(R.string.url_author)));
                         startActivity(intent);
                     }
                 });

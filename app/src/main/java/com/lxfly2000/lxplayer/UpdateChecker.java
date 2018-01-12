@@ -71,12 +71,9 @@ public class UpdateChecker {
         Pattern p=Pattern.compile(searchRegex);
         Matcher m=p.matcher(fileContentString);
         if(m.find()){
-            String subRegex="[0-9.]*";
-            Pattern pSub=Pattern.compile(subRegex);
             String subFound=fileContentString.substring(m.start(),m.end());
-            Matcher mSub=pSub.matcher(subFound);
-            if(mSub.find())
-                versionName=subFound.substring(mSub.start(),mSub.end());
+            //妈的老子用正则表达式怎么都匹配不上版本号，不用总行了吧？
+            versionName=subFound.substring(subFound.indexOf('\"')+1,subFound.lastIndexOf('\"'));
         }
         return versionName;
     }
