@@ -28,6 +28,8 @@ public class PlaylistActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_playlist);
 
+        //https://stackoverflow.com/questions/14545139/android-back-button-in-the-title-bar
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         listView=(ListView)findViewById(R.id.listView);
         registerForContextMenu(listView);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -65,8 +67,9 @@ public class PlaylistActivity extends AppCompatActivity {
             case R.id.action_playlist_add:return OnAddFile();
             case R.id.action_playlist_refresh:return OnRefresh();
             case R.id.action_playlist_clear:return OnClearList();
+            case android.R.id.home:return OnBackButton();
         }
-        return false;
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -95,6 +98,11 @@ public class PlaylistActivity extends AppCompatActivity {
         DisplayList();
     }
 
+
+    private boolean OnBackButton(){
+        finish();
+        return true;
+    }
 
     /** 添加文件
      *
