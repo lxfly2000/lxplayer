@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AppCompatActivity;
@@ -203,15 +204,26 @@ class FileUtils {
     static String getPath(Context context, Uri uri) {
 
         if ("content".equalsIgnoreCase(uri.getScheme())) {
-            String[] projection = { "_data" };
+            String[] projection = { MediaStore.Audio.Media.DATA };
             Cursor cursor;
 
             try {
                 cursor = context.getContentResolver().query(uri, projection, null, null, null);
                 if(cursor!=null) {
-                    int column_index = cursor.getColumnIndexOrThrow("_data");
+                    int column_index = cursor.getColumnIndexOrThrow(projection[0]);
                     if (cursor.moveToFirst()) {
-                        return cursor.getString(column_index);
+                        String path=cursor.getString(column_index);
+                        if(path==null){
+                            //Android 4.4 or later.
+                            //https://stackoverflow.com/a/41520090
+                            String args[]=new String[]{DocumentsContract.getDocumentId(uri).split(":")[1]};
+                            uri=MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                            cursor=context.getContentResolver().query(uri,projection,"_id=?",args,null);
+                            column_index=cursor.getColumnIndexOrThrow(projection[0]);
+                            if(cursor.moveToFirst())
+                                path=cursor.getString(column_index);
+                        }
+                        return path;
                     }
                     cursor.close();
                 }
