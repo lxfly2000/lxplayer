@@ -7,25 +7,33 @@
         android:layout_height="match_parent"
         tools:context="com.lxfly2000.lxplayer.SettingsActivity">
 
-    <TextView
-            android:text="@string/label_double_click_delta"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/textDoubleClickDelta" app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginTop="8dp" android:layout_marginLeft="8dp" app:layout_constraintLeft_toLeftOf="parent"/>
-    <EditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:ems="10"
-            android:id="@+id/editDoubleClickDelta" android:layout_marginTop="0dp"
-            app:layout_constraintTop_toBottomOf="@+id/textDoubleClickDelta" android:layout_marginLeft="8dp"
+    <ScrollView
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toTopOf="parent" android:layout_marginTop="8dp" android:layout_marginLeft="8dp"
             app:layout_constraintLeft_toLeftOf="parent" android:layout_marginRight="8dp"
-            app:layout_constraintRight_toRightOf="parent" android:hint="@string/label_double_click_delta"/>
+            app:layout_constraintRight_toRightOf="parent" app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="8dp" android:layout_marginStart="8dp" android:layout_marginEnd="8dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:orientation="vertical">
+            <TextView
+                    android:text="@string/label_double_click_delta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/textDoubleClickDelta"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:ems="10"
+                    android:id="@+id/editDoubleClickDelta"/>
+        </LinearLayout>
+    </ScrollView>
     <Button
             android:text="@android:string/ok"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/buttonOk" android:layout_marginRight="8dp" app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" android:layout_marginBottom="8dp"/>
+            app:layout_constraintBottom_toBottomOf="parent" android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"/>
 </android.support.constraint.ConstraintLayout>

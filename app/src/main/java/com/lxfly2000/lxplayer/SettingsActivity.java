@@ -3,6 +3,7 @@ package com.lxfly2000.lxplayer;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -25,6 +26,15 @@ public class SettingsActivity extends AppCompatActivity {
         preferences=getSharedPreferences(appIdentifier,MODE_PRIVATE);
         LoadSettings();
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        switch (item.getItemId()){
+            case android.R.id.home:finish();return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 
     private View.OnClickListener buttonCallbacks=new View.OnClickListener() {
         @Override
