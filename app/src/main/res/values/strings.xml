@@ -21,7 +21,9 @@
     <string name="label_playtime" formatted="false">%d:%02d/%d:%02d</string>
     <string name="menu_main_stop">停止播放</string>
     <string name="menu_main_about">帮助</string>
-    <string name="message_about" formatted="false">这是一个简易的音乐播放器。\n* 该程序只能在安卓6.0及以上系统中安装。\n\n线控说明：\n0.5秒内双击为切换下一曲，长按0.5秒为切换上一曲，单击为播放/暂停。\n\n制作：lxfly2000\n版本：%s\n发布日期：%s\n程序源码：%s</string>
+    <string name="message_about" formatted="false">这是一个简易的音乐播放器。\n*
+        该程序只能在安卓6.0及以上系统中安装。\n\n线控说明：\n0.5秒内双击为切换下一曲，长按0.5秒为切换上一曲，单击为播放/暂停。\n\n制作：lxfly2000\n版本：%s\n发布日期：%s\n程序源码：%s
+    </string>
     <string name="url_author">https://github.com/lxfly2000/lxplayer</string>
     <string name="button_visitUrl">访问网站</string>
     <string name="menu_main_speedUp">加速</string>
@@ -42,6 +44,9 @@
     <string name="message_new_version" formatted="false">检测到新版本，是否更新？\n当前版本：%s\n新版本：%s</string>
     <string name="message_no_update">当前版本已是最新。</string>
     <string name="error_check_update">无法检查更新，可能是网络有问题或目标服务器已更改。</string>
-    <string name="url_check_update">https://raw.githubusercontent.com/lxfly2000/lxplayer/master/app/build.gradle</string>
+    <string name="url_check_update">https://raw.githubusercontent.com/lxfly2000/lxplayer/master/app/build.gradle
+    </string>
     <string name="error_permission_network">未获取到联网权限，请修改权限设置。</string>
+    <string name="label_double_click_delta">线控双击间隔（毫秒）</string>
+    <string name="message_settings_saved">设置已保存。</string>
 </resources>

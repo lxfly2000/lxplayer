@@ -27,8 +27,12 @@
         </activity>
 
         <service
-                android:enabled="true"
-                android:name=".PlayerService">
+                android:name=".PlayerService"
+                android:enabled="true">
         </service>
+
+        <activity android:name=".SettingsActivity" android:label="@string/action_settings">
+        </activity>
     </application>
+
 </manifest>

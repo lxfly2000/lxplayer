@@ -39,10 +39,15 @@ public class MainActivity extends AppCompatActivity {
     private boolean listIsLoading=false;
     private MediaSession lineControlSession;
     private long lastMediaButtonTime=0;
-    private static final long doubleMediaButtonTime=500;
+    private long doubleMediaButtonTime;
     private static final String keyKeepSpeed="keep_speed";
     private static final String keyLastPlayIndex="play_index";
     private SharedPreferences playerPreferences;
+
+    private long GetDoubleMediaButtonTime(){
+        return getSharedPreferences(SettingsActivity.appIdentifier,MODE_PRIVATE).getLong(SettingsActivity.keyDoubleClickDelta,
+                SettingsActivity.vdDoubleClickDelta);
+    }
 
     private boolean IsServiceStarted(String serviceName){
         ActivityManager manager=(ActivityManager)getSystemService(ACTIVITY_SERVICE);
@@ -81,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
         seekTime.setOnSeekBarChangeListener(seekListener);
         dbHelper=ListDataHelper.getInstance(getApplicationContext());
         playerPreferences=getPreferences(MODE_PRIVATE);
+        doubleMediaButtonTime=GetDoubleMediaButtonTime();
 
         //检查权限设置
         if(checkCallingOrSelfPermission("android.permission.READ_EXTERNAL_STORAGE")!= PackageManager.PERMISSION_GRANTED){
@@ -240,9 +246,14 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_exitApp:ExitApplication(false);return true;
             case R.id.action_keep_speed:OnToggleKeepSpeed();return true;
             case R.id.action_check_update:CheckForUpdate(false);return true;
+            case R.id.action_settings:GotoSettings();return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void GotoSettings(){
+        startActivityForResult(new Intent(this,SettingsActivity.class),R.layout.activity_settings&0xFFFF);
     }
 
     private void gotoPlaylist(){
@@ -294,6 +305,11 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if(resultCode==RESULT_OK){
                     PlayerPlayMusic(data.getIntExtra("SelectedIndex",0));
+                }
+                break;
+            case R.layout.activity_settings&0xFFFF:
+                if(resultCode==RESULT_OK) {
+                    doubleMediaButtonTime = GetDoubleMediaButtonTime();
                 }
                 break;
         }
