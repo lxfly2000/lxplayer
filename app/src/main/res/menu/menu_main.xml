@@ -18,22 +18,24 @@
           android:title="@string/menu_main_speedDown"
           android:orderInCategory="103"
           app:showAsAction="never"/>
+    <item android:title="@string/menu_custom_playback_speed" android:orderInCategory="104"
+          android:id="@+id/action_set_speed"/>
     <item android:id="@+id/action_keep_speed"
           android:title="@string/menu_keep_speed"
-          android:orderInCategory="104"
+          android:orderInCategory="105"
           android:checkable="true"
           app:showAsAction="never"/>
     <item android:id="@+id/action_about"
           android:title="@string/menu_main_about"
-          android:orderInCategory="105"
+          android:orderInCategory="106"
           app:showAsAction="never"/>
-    <item android:title="@string/action_settings" android:orderInCategory="106" android:id="@+id/action_settings"/>
+    <item android:title="@string/action_settings" android:orderInCategory="107" android:id="@+id/action_settings"/>
     <item android:id="@+id/action_check_update"
           android:title="@string/menu_check_update"
-          android:orderInCategory="107"
+          android:orderInCategory="108"
           app:showAsAction="never"/>
     <item android:id="@+id/action_exitApp"
           android:title="@string/menu_exitApp"
-          android:orderInCategory="108"
+          android:orderInCategory="109"
           app:showAsAction="never"/>
 </menu>

@@ -49,4 +49,6 @@
     <string name="error_permission_network">未获取到联网权限，请修改权限设置。</string>
     <string name="label_double_click_delta">线控双击间隔（毫秒）</string>
     <string name="message_settings_saved">设置已保存。</string>
+    <string name="menu_custom_playback_speed">调整速度</string>
+    <string name="button_restore_speed">恢复原速</string>
 </resources>

@@ -247,9 +247,55 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_keep_speed:OnToggleKeepSpeed();return true;
             case R.id.action_check_update:CheckForUpdate(false);return true;
             case R.id.action_settings:GotoSettings();return true;
+            case R.id.action_set_speed:SetSpeedDialog();return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    SeekBar seekSetSpeed;
+    private void SetSpeedDialog(){
+        final float accuracy=100.0f;
+        AlertDialog dlg=new AlertDialog.Builder(this)
+                .setTitle(R.string.menu_custom_playback_speed)
+                .setView(R.layout.dialog_set_speed)
+                .setNeutralButton(R.string.button_restore_speed, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        playerService.SetPlaybackSpeed(1.0f);
+                        menuKeepSpeed.setTitle(String.format(getString(R.string.menu_keep_speed),playerService.GetPlaybackSpeed()));
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel,null)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        playerService.SetPlaybackSpeed((float)(Math.pow(2,(seekSetSpeed.getProgress()-accuracy)/accuracy)));
+                        menuKeepSpeed.setTitle(String.format(getString(R.string.menu_keep_speed),playerService.GetPlaybackSpeed()));
+                    }
+                }).show();
+        seekSetSpeed=(SeekBar)dlg.findViewById(R.id.seekSetSpeed);
+        seekSetSpeed.setMax((int)(2*accuracy));
+        final TextView textSpeed=(TextView)dlg.findViewById(R.id.textSpeed);
+        seekSetSpeed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                textSpeed.setText(String.format("%.3f",Math.pow(2,(seekBar.getProgress()-accuracy)/accuracy)));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                //Nothing here.
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                //Nothing here.
+            }
+        });
+        //Sp=2^((Pg-100)/100)
+        //Pg=log(2,Sp)*100+100
+        seekSetSpeed.setProgress((int)(Math.log(playerService.GetPlaybackSpeed())/Math.log(2)*accuracy+accuracy));
     }
 
     private void GotoSettings(){
