@@ -51,4 +51,7 @@
     <string name="message_settings_saved">设置已保存。</string>
     <string name="menu_custom_playback_speed">调整速度</string>
     <string name="button_restore_speed">恢复原速</string>
+    <string name="edit_hint_search_anime">输入要搜索的歌曲名称……</string>
+    <string name="message_anime_jumping">跳转至“%s”……</string>
+    <string name="message_anime_not_found">未找到名称为“%s”的歌曲。</string>
 </resources>

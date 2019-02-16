@@ -1,12 +1,15 @@
 package com.lxfly2000.lxplayer;
 
+import android.app.SearchManager;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.BaseColumns;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v4.widget.SimpleCursorAdapter;
@@ -15,9 +18,7 @@ import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ListView;
-import android.widget.Toast;
+import android.widget.*;
 
 public class PlaylistActivity extends AppCompatActivity {
     private ListDataHelper dh;
@@ -49,6 +50,36 @@ public class PlaylistActivity extends AppCompatActivity {
         dh=ListDataHelper.getInstance(this);
         if(getIntent().getBooleanExtra("ShouldFinish",false))ReloadList(true);
         DisplayList();
+
+        //处理Intent
+        HandleIntent(getIntent());
+        //初始化搜索建议相关变量
+        final String[]suggestionKeys=new String[]{"title"};
+        final int[]suggestionsIds=new int[]{android.R.id.text1};
+        suggestionsAdapter=new SimpleCursorAdapter(this,android.R.layout.simple_list_item_1,null,suggestionKeys,
+                suggestionsIds, CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+    }
+
+    SimpleCursorAdapter suggestionsAdapter;
+
+    @Override
+    protected void onNewIntent(Intent intent){
+        HandleIntent(intent);
+    }
+
+    private void HandleIntent(Intent intent){
+        if(Intent.ACTION_SEARCH.equals(intent.getAction())){
+            String queryWord=intent.getStringExtra(SearchManager.QUERY);
+            //跳转至搜索的番剧名称处
+            for(int i=0;i<dh.GetDataCount();i++){
+                if(dh.GetTitleByIndex(i).equals(queryWord)){
+                    Toast.makeText(this,String.format(getString(R.string.message_anime_jumping),queryWord),Toast.LENGTH_SHORT).show();
+                    listView.setSelection(i);
+                    return;
+                }
+            }
+            Toast.makeText(this,String.format(getString(R.string.message_anime_not_found),queryWord),Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
@@ -57,9 +88,58 @@ public class PlaylistActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu){
-        getMenuInflater().inflate(R.menu.menu_playlist,menu);
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_playlist, menu);
         return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu){
+        super.onPrepareOptionsMenu(menu);
+        //https://developer.android.google.cn/training/search/setup
+        //设置搜索属性
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        final SearchView searchView = (SearchView) menu.findItem(R.id.app_bar_search).getActionView();
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        searchView.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
+            @Override
+            public boolean onSuggestionSelect(int i) {
+                return onSuggestionClick(i);
+            }
+
+            @Override
+            public boolean onSuggestionClick(int i) {
+                //查询选择的是什么建议
+                //https://stackoverflow.com/a/50385750（答案有误）
+                MatrixCursor c=(MatrixCursor)searchView.getSuggestionsAdapter().getCursor();
+                c.moveToPosition(i);
+                searchView.setQuery(c.getString(1),true);
+                return true;
+            }
+        });
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                UpdateSuggestionAdapter(s);
+                return false;
+            }
+        });
+        return true;
+    }
+
+    private void  UpdateSuggestionAdapter(String queryStr){
+        final MatrixCursor c=new MatrixCursor(new String[]{BaseColumns._ID,"title"});
+        for(int i=0;i<dh.GetDataCount();i++){
+            String title=dh.GetTitleByIndex(i);
+            if(title.toLowerCase().contains(queryStr.toLowerCase()))
+                c.addRow(new Object[]{i,title});
+        }
+        suggestionsAdapter.changeCursor(c);
     }
 
     @Override

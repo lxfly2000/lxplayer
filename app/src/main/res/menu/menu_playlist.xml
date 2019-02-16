@@ -14,4 +14,9 @@
           android:title="@string/menu_playlist_clear"
           android:orderInCategory="102"
           app:showAsAction="never"/>
+    <item
+            android:id="@+id/app_bar_search"
+            android:icon="@drawable/ic_search_black_24dp"
+            android:title="@android:string/search_go" app:actionViewClass="android.widget.SearchView"
+            app:showAsAction="ifRoom"/>
 </menu>
