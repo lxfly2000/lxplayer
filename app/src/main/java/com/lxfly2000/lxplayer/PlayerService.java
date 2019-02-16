@@ -1,13 +1,11 @@
 package com.lxfly2000.lxplayer;
 
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.Service;
+import android.app.*;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.Build;
@@ -187,6 +185,24 @@ public class PlayerService extends Service {
         sendBroadcast(intent);
     }
 
+    private String notifyChannelId=BuildConfig.APPLICATION_ID;
+
+    private void RegisterNotifyIdChannel(){
+        //https://blog.csdn.net/qq_15527709/article/details/78853048
+        String notifyChannelName = "LxPlayer Channel";
+        NotificationChannel notificationChannel = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationChannel = new NotificationChannel(notifyChannelId,
+                    notifyChannelName, NotificationManager.IMPORTANCE_HIGH);
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.RED);
+            notificationChannel.setShowBadge(true);
+            notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            manager.createNotificationChannel(notificationChannel);
+        }
+    }
+
     private void UpdateNotificationBar(boolean updateMainActivity){
         ListDataHelper dbHelper=ListDataHelper.getInstance(getApplicationContext());
         //参考：http://blog.csdn.net/yyingwei/article/details/8509402
@@ -201,6 +217,8 @@ public class PlayerService extends Service {
         Notification.MediaStyle style=new Notification.MediaStyle()
                 .setShowActionsInCompactView(1);
         Notification.Builder notifBuilder=new Notification.Builder(this);
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.O)
+            notifBuilder.setChannelId(notifyChannelId);
         notifBuilder.setContentText(getText(R.string.app_name));
         notifBuilder.setSmallIcon(R.mipmap.ic_launcher);
         if(dbHelper.GetDataCount()>0) {
@@ -219,6 +237,7 @@ public class PlayerService extends Service {
         notifBuilder.setStyle(style);
         Notification notification=notifBuilder.build();
         if(player==null) {
+            RegisterNotifyIdChannel();
             startForeground(notifyId, notification);
         }else {
             notificationManager.notify(notifyId,notification);
