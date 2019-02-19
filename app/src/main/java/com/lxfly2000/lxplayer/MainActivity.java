@@ -1,5 +1,6 @@
 package com.lxfly2000.lxplayer;
 
+import android.Manifest;
 import android.app.ActivityManager;
 import android.content.*;
 import android.content.pm.PackageManager;
@@ -30,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
     private ToggleButton toggleLoop,toggleRandom;
     private SeekBar seekTime;
     FloatingActionButton fab;
-    private MenuItem menuKeepSpeed;
+    private MenuItem menuKeepSpeed,menuKeepTime,menuKeepPitch;
     private boolean serviceIsBound=false;
     private boolean needLoadPreferences =false;
     private TimeInfo timeInfo=new TimeInfo();
@@ -40,8 +41,9 @@ public class MainActivity extends AppCompatActivity {
     private MediaSession lineControlSession;
     private long lastMediaButtonTime=0;
     private long doubleMediaButtonTime;
-    private static final String keyKeepSpeed="keep_speed";
+    private static final String keyKeepSpeed="keep_speed",keyKeepTime="keep_time",keyKeepPitch="keep_pitch";
     private static final String keyLastPlayIndex="play_index";
+    private static final int requestCodeReadStorage=0;
     private SharedPreferences playerPreferences;
 
     private long GetDoubleMediaButtonTime(){
@@ -66,41 +68,55 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        fab=(FloatingActionButton) findViewById(R.id.fab);
+        fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(mainClickListener);
 
-        textTitle=(TextView)findViewById(R.id.textViewTitle);
-        textTime=(TextView)findViewById(R.id.textViewTime);
-        buttonPlay=(ImageButton)findViewById(R.id.imageButtonPlay);
+        textTitle = (TextView) findViewById(R.id.textViewTitle);
+        textTime = (TextView) findViewById(R.id.textViewTime);
+        buttonPlay = (ImageButton) findViewById(R.id.imageButtonPlay);
         buttonPlay.setOnClickListener(mainClickListener);
-        buttonForward=(ImageButton)findViewById(R.id.imageButtonForward);
+        buttonForward = (ImageButton) findViewById(R.id.imageButtonForward);
         buttonForward.setOnClickListener(mainClickListener);
-        buttonBackward=(ImageButton)findViewById(R.id.imageButtonBackward);
+        buttonBackward = (ImageButton) findViewById(R.id.imageButtonBackward);
         buttonBackward.setOnClickListener(mainClickListener);
-        imageView=(ImageView)findViewById(R.id.imageView);
-        toggleLoop=(ToggleButton)findViewById(R.id.toggleLoop);
+        imageView = (ImageView) findViewById(R.id.imageView);
+        toggleLoop = (ToggleButton) findViewById(R.id.toggleLoop);
         toggleLoop.setOnClickListener(mainClickListener);
-        toggleRandom=(ToggleButton)findViewById(R.id.toggleRandom);
+        toggleRandom = (ToggleButton) findViewById(R.id.toggleRandom);
         toggleRandom.setOnClickListener(mainClickListener);
-        seekTime=(SeekBar)findViewById(R.id.seekBar);
+        seekTime = (SeekBar) findViewById(R.id.seekBar);
         seekTime.setOnSeekBarChangeListener(seekListener);
-        dbHelper=ListDataHelper.getInstance(getApplicationContext());
-        playerPreferences=getPreferences(MODE_PRIVATE);
-        doubleMediaButtonTime=GetDoubleMediaButtonTime();
+        dbHelper = ListDataHelper.getInstance(getApplicationContext());
+        playerPreferences = getPreferences(MODE_PRIVATE);
+        doubleMediaButtonTime = GetDoubleMediaButtonTime();
 
+        AppInit(true);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        AppInit(false);
+    }
+
+    private void AppInit(boolean needRequestPermissions){
         //检查权限设置
-        if(checkCallingOrSelfPermission("android.permission.READ_EXTERNAL_STORAGE")!= PackageManager.PERMISSION_GRANTED){
-            AlertDialog.Builder about=new AlertDialog.Builder(this);
-            about.setTitle(R.string.app_name);
-            about.setMessage(R.string.message_error_permission_exstorage);
-            about.setPositiveButton(android.R.string.ok, null);
-            about.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                @Override
-                public void onDismiss(DialogInterface dialogInterface) {
-                    ExitApplication(true);
-                }
-            });
-            about.show();
+        if(checkCallingOrSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED){
+            if(needRequestPermissions){
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},requestCodeReadStorage);
+            }else {
+                AlertDialog.Builder about = new AlertDialog.Builder(this);
+                about.setTitle(R.string.app_name);
+                about.setMessage(R.string.message_error_permission_exstorage);
+                about.setPositiveButton(android.R.string.ok, null);
+                about.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialogInterface) {
+                        ExitApplication(true);
+                    }
+                });
+                about.show();
+            }
             return;
         }
 
@@ -221,11 +237,17 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         //http://blog.csdn.net/maojudong/article/details/7010210
         menuKeepSpeed=menu.findItem(R.id.action_keep_speed);
+        menuKeepTime=menu.findItem(R.id.action_change_speed_keep_time);
+        menuKeepPitch=menu.findItem(R.id.action_change_speed_keep_pitch);
         if(playerService==null) {
             menuKeepSpeed.setChecked(false);
+            menuKeepTime.setChecked(false);
+            menuKeepPitch.setChecked(false);
             menuKeepSpeed.setTitle(String.format(getString(R.string.menu_keep_speed), 1.0f));
         }else {
             menuKeepSpeed.setChecked(playerService.IsKeepSpeed());
+            menuKeepTime.setChecked(playerService.IsKeepTime());
+            menuKeepPitch.setChecked(playerService.IsKeepPitch());
             menuKeepSpeed.setTitle(String.format(getString(R.string.menu_keep_speed),playerService.GetPlaybackSpeed()));
         }
         return true;
@@ -245,6 +267,8 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_speedDown:OnChangePlaybackSpeed(false);return true;
             case R.id.action_exitApp:ExitApplication(false);return true;
             case R.id.action_keep_speed:OnToggleKeepSpeed();return true;
+            case R.id.action_change_speed_keep_time:OnToggleKeepTime();return true;
+            case R.id.action_change_speed_keep_pitch:OnToggleKeepPitch();return true;
             case R.id.action_check_update:CheckForUpdate(false);return true;
             case R.id.action_settings:GotoSettings();return true;
             case R.id.action_set_speed:SetSpeedDialog();return true;
@@ -520,6 +544,18 @@ public class MainActivity extends AppCompatActivity {
         playerService.SetKeepSpeed(!playerService.IsKeepSpeed());
         menuKeepSpeed.setChecked(playerService.IsKeepSpeed());
         playerPreferences.edit().putBoolean(keyKeepSpeed,playerService.IsKeepSpeed()).apply();
+    }
+
+    private void OnToggleKeepTime(){
+        playerService.SetKeepTime(!playerService.IsKeepTime());
+        menuKeepTime.setChecked(playerService.IsKeepTime());
+        playerPreferences.edit().putBoolean(keyKeepTime,playerService.IsKeepTime()).apply();
+    }
+
+    private void OnToggleKeepPitch(){
+        playerService.SetKeepPitch(!playerService.IsKeepPitch());
+        menuKeepPitch.setChecked(playerService.IsKeepPitch());
+        playerPreferences.edit().putBoolean(keyKeepPitch,playerService.IsKeepPitch()).apply();
     }
 
     private static final String INTENT_EXTRA_UPDATE_ONLY="onlyUpdate";

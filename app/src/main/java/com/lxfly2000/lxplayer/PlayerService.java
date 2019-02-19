@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.media.MediaPlayer;
+import android.media.PlaybackParams;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
@@ -18,7 +19,7 @@ public class PlayerService extends Service {
     private ListDataHelper dh;
     private final IBinder mBinder=new LocalBinder();
     private int playlistCurrentPos=0;
-    private boolean keepSpeed=false;
+    private boolean keepSpeed=false,keepTime=false,keepPitch=false;
     private float playbackSpeed=1.0f;
     private static final String ACTION_BACKWARD =BuildConfig.APPLICATION_ID+".Backward";
     private static final String ACTION_FORWARD =BuildConfig.APPLICATION_ID+".Forward";
@@ -264,7 +265,7 @@ public class PlayerService extends Service {
         playbackSpeed=newSpeed;
         //https://stackoverflow.com/questions/10849961/speed-control-of-mediaplayer-in-android
         if(IsPlaying())
-            player.setPlaybackParams(player.getPlaybackParams().setSpeed(playbackSpeed).setPitch(playbackSpeed));
+            player.setPlaybackParams(player.getPlaybackParams().setSpeed(keepTime?1.0f:playbackSpeed).setPitch(keepPitch?1.0f:playbackSpeed));
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -286,5 +287,21 @@ public class PlayerService extends Service {
 
     public boolean IsKeepSpeed(){
         return keepSpeed;
+    }
+
+    public void SetKeepTime(boolean keep){
+        keepTime=keep;
+    }
+
+    public boolean IsKeepTime(){
+        return keepTime;
+    }
+
+    public void SetKeepPitch(boolean keep){
+        keepPitch=keep;
+    }
+
+    public boolean IsKeepPitch(){
+        return keepPitch;
     }
 }

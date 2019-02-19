@@ -51,4 +51,6 @@
     <string name="message_settings_saved">设置已保存。</string>
     <string name="menu_custom_playback_speed">调整速度</string>
     <string name="button_restore_speed">恢复原速</string>
+    <string name="menu_change_speed_keep_time">调整速度时保持时长</string>
+    <string name="menu_change_speed_keep_pitch">调整速度时保持音调</string>
 </resources>
