@@ -53,4 +53,5 @@
     <string name="button_restore_speed">恢复原速</string>
     <string name="menu_change_speed_keep_time">调整速度时保持时长</string>
     <string name="menu_change_speed_keep_pitch">调整速度时保持音调</string>
+    <string name="key_double_click_delta" translatable="false">double_click_delta</string>
 </resources>

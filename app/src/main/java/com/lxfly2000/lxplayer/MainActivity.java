@@ -7,11 +7,11 @@ import android.content.pm.PackageManager;
 import android.media.session.MediaSession;
 import android.net.Uri;
 import android.os.*;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -47,8 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences playerPreferences;
 
     private long GetDoubleMediaButtonTime(){
-        return getSharedPreferences(SettingsActivity.appIdentifier,MODE_PRIVATE).getLong(SettingsActivity.keyDoubleClickDelta,
-                SettingsActivity.vdDoubleClickDelta);
+        return Long.parseLong(getSharedPreferences(SettingsActivity.appIdentifier,MODE_PRIVATE).getString(getString(R.string.key_double_click_delta),
+                SettingsFragment.vdDoubleClickDelta));
     }
 
     private boolean IsServiceStarted(String serviceName){
@@ -323,7 +323,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void GotoSettings(){
-        startActivityForResult(new Intent(this,SettingsActivity.class),R.layout.activity_settings&0xFFFF);
+        startActivityForResult(new Intent(this,SettingsActivity.class),R.xml.pref_application&0xFFFF);
     }
 
     private void gotoPlaylist(){
@@ -377,7 +377,7 @@ public class MainActivity extends AppCompatActivity {
                     PlayerPlayMusic(data.getIntExtra("SelectedIndex",0));
                 }
                 break;
-            case R.layout.activity_settings&0xFFFF:
+            case R.xml.pref_application&0xFFFF:
                 if(resultCode==RESULT_OK) {
                     doubleMediaButtonTime = GetDoubleMediaButtonTime();
                 }
