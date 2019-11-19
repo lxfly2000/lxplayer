@@ -194,9 +194,12 @@ public class PlayerService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             notificationChannel = new NotificationChannel(notifyChannelId,
                     notifyChannelName, NotificationManager.IMPORTANCE_HIGH);
-            notificationChannel.enableLights(true);
+            notificationChannel.enableLights(false);
             notificationChannel.setLightColor(Color.RED);
-            notificationChannel.setShowBadge(true);
+            notificationChannel.setShowBadge(false);
+            notificationChannel.enableVibration(false);
+            notificationChannel.setImportance(NotificationManager.IMPORTANCE_DEFAULT);
+            notificationChannel.setSound(null,null);
             notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             manager.createNotificationChannel(notificationChannel);
