@@ -7,8 +7,8 @@ android {
         applicationId 'com.lxfly2000.lxplayer'
         minSdkVersion 23
         targetSdkVersion 28
-        versionCode 12
-        versionName "1.7"
+        versionCode 13
+        versionName "1.7.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "BUILD_DATE", "\"" + new Date().format("yyyy-M-d") + "\""
     }
