@@ -111,8 +111,10 @@ public class PlaylistActivity extends AppCompatActivity {
      */
     private boolean OnAddFile(){
         //参考：http://www.bkjia.com/Androidjc/1075240.html
+        //同时指定多种格式：https://blog.csdn.net/a840347/article/details/102602241
         Intent intent=new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("audio/*");
+        intent.setType("audio/*|video/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"audio/*","video/*"});
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         try {
             startActivityForResult(Intent.createChooser(intent, getString(R.string.title_chooseFile)), R.id.action_playlist_add & 0xFFFF);

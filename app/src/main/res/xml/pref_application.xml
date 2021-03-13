@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <EditTextPreference
-            android:defaultValue="0"
-            android:selectAllOnFocus="true"
-            android:singleLine="true"
-            android:title="@string/label_double_click_delta" android:key="@string/key_double_click_delta"
-            android:inputType="number"/>
+    <CheckBoxPreference
+            android:title="@string/label_enable_line_control" android:key="@string/key_enable_line_control"
+            android:defaultValue="true"/>
 </PreferenceScreen>

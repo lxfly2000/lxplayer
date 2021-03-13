@@ -3,12 +3,11 @@ package com.lxfly2000.lxplayer;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.EditTextPreference;
+import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 
 public class SettingsFragment extends PreferenceFragment {
-    public static final String vdDoubleClickDelta="500";
     private Preference.OnPreferenceChangeListener extraPrefListener;
     SharedPreferences perfApp;
     @Override
@@ -16,12 +15,10 @@ public class SettingsFragment extends PreferenceFragment {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.pref_application);
         perfApp=getContext().getSharedPreferences(SettingsActivity.appIdentifier,Context.MODE_PRIVATE);
-        EditTextPreference prefDoubleClick=(EditTextPreference)findPreference(getString(R.string.key_double_click_delta));
-        prefDoubleClick.setText(perfApp.getString(getString(R.string.key_double_click_delta),vdDoubleClickDelta));
-        prefDoubleClick.setSummary(prefDoubleClick.getText());
-        prefDoubleClick.setOnPreferenceChangeListener((preference, o) -> {
-            preference.setSummary((String)o);
-            perfApp.edit().putString(getString(R.string.key_double_click_delta),(String)o).apply();
+        CheckBoxPreference prefEnableLineControl =(CheckBoxPreference) findPreference(getString(R.string.key_enable_line_control));
+        prefEnableLineControl.setChecked(perfApp.getBoolean(getString(R.string.key_enable_line_control),true));
+        prefEnableLineControl.setOnPreferenceChangeListener((preference, o) -> {
+            perfApp.edit().putBoolean(getString(R.string.key_enable_line_control),(Boolean) o).apply();
             if(extraPrefListener!=null)
                 return extraPrefListener.onPreferenceChange(preference,o);
             return true;

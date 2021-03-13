@@ -4,19 +4,20 @@ import android.Manifest;
 import android.app.ActivityManager;
 import android.content.*;
 import android.content.pm.PackageManager;
-import android.media.session.MediaSession;
 import android.net.Uri;
-import android.os.*;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import android.view.KeyEvent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -34,22 +35,13 @@ public class MainActivity extends AppCompatActivity {
     private MenuItem menuKeepSpeed,menuKeepTime,menuKeepPitch;
     private boolean serviceIsBound=false;
     private boolean needLoadPreferences =false;
-    private TimeInfo timeInfo=new TimeInfo();
+    private final TimeInfo timeInfo=new TimeInfo();
     private Timer seekTimer=null;
     private boolean seekBarIsSeeking=false;
     private boolean listIsLoading=false;
-    private MediaSession lineControlSession;
-    private long lastMediaButtonTime=0;
-    private long doubleMediaButtonTime;
     private static final String keyKeepSpeed="keep_speed",keyKeepTime="keep_time",keyKeepPitch="keep_pitch";
-    private static final String keyLastPlayIndex="play_index";
     private static final int requestCodeReadStorage=0;
     private SharedPreferences playerPreferences;
-
-    private long GetDoubleMediaButtonTime(){
-        return Long.parseLong(getSharedPreferences(SettingsActivity.appIdentifier,MODE_PRIVATE).getString(getString(R.string.key_double_click_delta),
-                SettingsFragment.vdDoubleClickDelta));
-    }
 
     private boolean IsServiceStarted(String serviceName){
         ActivityManager manager=(ActivityManager)getSystemService(ACTIVITY_SERVICE);
@@ -65,30 +57,29 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab = findViewById(R.id.fab);
         fab.setOnClickListener(mainClickListener);
 
-        textTitle = (TextView) findViewById(R.id.textViewTitle);
-        textTime = (TextView) findViewById(R.id.textViewTime);
-        buttonPlay = (ImageButton) findViewById(R.id.imageButtonPlay);
+        textTitle = findViewById(R.id.textViewTitle);
+        textTime = findViewById(R.id.textViewTime);
+        buttonPlay = findViewById(R.id.imageButtonPlay);
         buttonPlay.setOnClickListener(mainClickListener);
-        buttonForward = (ImageButton) findViewById(R.id.imageButtonForward);
+        buttonForward = findViewById(R.id.imageButtonForward);
         buttonForward.setOnClickListener(mainClickListener);
-        buttonBackward = (ImageButton) findViewById(R.id.imageButtonBackward);
+        buttonBackward = findViewById(R.id.imageButtonBackward);
         buttonBackward.setOnClickListener(mainClickListener);
-        imageView = (ImageView) findViewById(R.id.imageView);
-        toggleLoop = (ToggleButton) findViewById(R.id.toggleLoop);
+        imageView = findViewById(R.id.imageView);
+        toggleLoop = findViewById(R.id.toggleLoop);
         toggleLoop.setOnClickListener(mainClickListener);
-        toggleRandom = (ToggleButton) findViewById(R.id.toggleRandom);
+        toggleRandom = findViewById(R.id.toggleRandom);
         toggleRandom.setOnClickListener(mainClickListener);
-        seekTime = (SeekBar) findViewById(R.id.seekBar);
+        seekTime = findViewById(R.id.seekBar);
         seekTime.setOnSeekBarChangeListener(seekListener);
         dbHelper = ListDataHelper.getInstance(getApplicationContext());
-        playerPreferences = getPreferences(MODE_PRIVATE);
-        doubleMediaButtonTime = GetDoubleMediaButtonTime();
+        playerPreferences = getSharedPreferences(SettingsActivity.appIdentifier,MODE_PRIVATE);
 
         AppInit(true);
     }
@@ -109,12 +100,7 @@ public class MainActivity extends AppCompatActivity {
                 about.setTitle(R.string.app_name);
                 about.setMessage(R.string.message_error_permission_exstorage);
                 about.setPositiveButton(android.R.string.ok, null);
-                about.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialogInterface) {
-                        ExitApplication(true);
-                    }
-                });
+                about.setOnDismissListener(dialogInterface -> ExitApplication(true));
                 about.show();
             }
             return;
@@ -130,50 +116,19 @@ public class MainActivity extends AppCompatActivity {
             CanBindService();
         }
         //注册播放列表广播接收器
-        registerReceiver(playerReceiver,new IntentFilter(getPackageName()));
-
-        //注册线控回调
-        lineControlSession=new MediaSession(this,getString(R.string.app_name));
-        lineControlSession.setCallback(lineControlCallback);
-        lineControlSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS|MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        lineControlSession.setActive(true);
+        IntentFilter fiPlayer=new IntentFilter();
+        fiPlayer.addAction(PlayerService.ACTION_UPDATE_SELECTED_INDEX);
+        fiPlayer.addAction(PlayerService.ACTION_UPDATE_BUTTON_PLAY);
+        registerReceiver(playerReceiver,fiPlayer);
 
         //注册通知栏广播接收器
-        IntentFilter fiNotification=new IntentFilter();
-        fiNotification.addAction(PlayerService.ACTION_UPDATE_MAIN_INTERFACE);
-        registerReceiver(notificationReceiver,fiNotification);
+        registerReceiver(notificationReceiver,new IntentFilter(PlayerService.ACTION_UPDATE_MAIN_INTERFACE));
 
         //注册检查更新广播接收器
-        IntentFilter fiUpdate=new IntentFilter();
-        fiUpdate.addAction(ACTION_CHECK_UPDATE_RESULT);
-        registerReceiver(checkUpdateReceiver,fiUpdate);
+        registerReceiver(checkUpdateReceiver,new IntentFilter(ACTION_CHECK_UPDATE_RESULT));
         //检测更新
         CheckForUpdate(true);
     }
-
-    private MediaSession.Callback lineControlCallback=new MediaSession.Callback() {
-        @Override
-        public boolean onMediaButtonEvent(Intent mediaButtonIntent) {
-            if(Intent.ACTION_MEDIA_BUTTON.equals(mediaButtonIntent.getAction())){
-                KeyEvent event=mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-                if(event.getAction()==KeyEvent.ACTION_UP) {
-                    if(event.getEventTime()-lastMediaButtonTime<doubleMediaButtonTime) {
-                        OnButtonPlay(false);
-                        OnChangeMusic(true);
-                        Toast.makeText(getApplicationContext(),R.string.button_forward,Toast.LENGTH_LONG).show();
-                    }else if(event.getEventTime()-event.getDownTime()>doubleMediaButtonTime) {
-                        OnChangeMusic(false);
-                        Toast.makeText(getApplicationContext(),R.string.button_backward,Toast.LENGTH_LONG).show();
-                    }else{
-                        OnButtonPlay(false);
-                        lastMediaButtonTime=event.getEventTime();
-                    }
-                }
-                return true;
-            }
-            return super.onMediaButtonEvent(mediaButtonIntent);
-        }
-    };
 
     private BroadcastReceiver notificationReceiver=new BroadcastReceiver() {
         @Override
@@ -189,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                 playerService=((PlayerService.LocalBinder)iBinder).getService();
                 if(needLoadPreferences) {
                     playerService.SetKeepSpeed(playerPreferences.getBoolean(keyKeepSpeed, false));
-                    playerService.SetPlayIndex(playerPreferences.getInt(keyLastPlayIndex, -1));
+                    playerService.SetPlayIndex(playerPreferences.getInt(PlayerService.keyLastPlayIndex, -1));
                 }
                 UpdateInterfaces(-1);
             }
@@ -283,24 +238,18 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog dlg=new AlertDialog.Builder(this)
                 .setTitle(R.string.menu_custom_playback_speed)
                 .setView(R.layout.dialog_set_speed)
-                .setNeutralButton(R.string.button_restore_speed, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        playerService.SetPlaybackSpeed(1.0f);
-                        menuKeepSpeed.setTitle(String.format(getString(R.string.menu_keep_speed),playerService.GetPlaybackSpeed()));
-                    }
+                .setNeutralButton(R.string.button_restore_speed, (dialogInterface, i) -> {
+                    playerService.SetPlaybackSpeed(1.0f);
+                    menuKeepSpeed.setTitle(String.format(getString(R.string.menu_keep_speed),playerService.GetPlaybackSpeed()));
                 })
                 .setNegativeButton(android.R.string.cancel,null)
-                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        playerService.SetPlaybackSpeed((float)(Math.pow(2,(seekSetSpeed.getProgress()-accuracy)/accuracy)));
-                        menuKeepSpeed.setTitle(String.format(getString(R.string.menu_keep_speed),playerService.GetPlaybackSpeed()));
-                    }
+                .setPositiveButton(android.R.string.ok, (dialogInterface, i) -> {
+                    playerService.SetPlaybackSpeed((float)(Math.pow(2,(seekSetSpeed.getProgress()-accuracy)/accuracy)));
+                    menuKeepSpeed.setTitle(String.format(getString(R.string.menu_keep_speed),playerService.GetPlaybackSpeed()));
                 }).show();
-        seekSetSpeed=(SeekBar)dlg.findViewById(R.id.seekSetSpeed);
+        seekSetSpeed= dlg.findViewById(R.id.seekSetSpeed);
         seekSetSpeed.setMax((int)(2*accuracy));
-        final TextView textSpeed=(TextView)dlg.findViewById(R.id.textSpeed);
+        final TextView textSpeed= dlg.findViewById(R.id.textSpeed);
         seekSetSpeed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
@@ -317,6 +266,9 @@ public class MainActivity extends AppCompatActivity {
                 //Nothing here.
             }
         });
+        //因为onProgressChanged只有在值变为不一样的数值时才会被调用因此用下面两句使onProgressChanged能够被调用
+        seekSetSpeed.setProgress(0);
+        seekSetSpeed.setProgress((int)(2*accuracy));
         //Sp=2^((Pg-100)/100)
         //Pg=log(2,Sp)*100+100
         seekSetSpeed.setProgress((int)(Math.log(playerService.GetPlaybackSpeed())/Math.log(2)*accuracy+accuracy));
@@ -330,23 +282,19 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(new Intent(this,PlaylistActivity.class),R.layout.activity_playlist&0xFFFF);
     }
 
-    private View.OnClickListener mainClickListener=new View.OnClickListener(){
-
-        @Override
-        public void onClick(View view) {
-            switch (view.getId()){
-                case R.id.fab:gotoPlaylist();return;
-                case R.id.imageButtonPlay:OnButtonPlay(false);return;
-                case R.id.imageButtonBackward:OnChangeMusic(false);return;
-                case R.id.imageButtonForward:OnChangeMusic(true);return;
-                case R.id.toggleLoop:OnSwitchLoop();return;
-                case R.id.toggleRandom:OnSwitchRandom();return;
-            }
-            Snackbar.make(view,R.string.message_unknownOperation,Snackbar.LENGTH_SHORT).show();
+    private final View.OnClickListener mainClickListener= view -> {
+        switch (view.getId()){
+            case R.id.fab:gotoPlaylist();return;
+            case R.id.imageButtonPlay:OnButtonPlay(false);return;
+            case R.id.imageButtonBackward:playerService.OnChangeMusic(false);return;
+            case R.id.imageButtonForward:playerService.OnChangeMusic(true);return;
+            case R.id.toggleLoop:OnSwitchLoop();return;
+            case R.id.toggleRandom:OnSwitchRandom();return;
         }
+        Snackbar.make(view,R.string.message_unknownOperation,Snackbar.LENGTH_SHORT).show();
     };
 
-    private SeekBar.OnSeekBarChangeListener seekListener=new SeekBar.OnSeekBarChangeListener() {
+    private final SeekBar.OnSeekBarChangeListener seekListener=new SeekBar.OnSeekBarChangeListener() {
         @Override
         public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
             textTime.setText(timeInfo.GetFormattedString(seekBar.getProgress(),getString(R.string.label_playtime)));
@@ -374,12 +322,7 @@ public class MainActivity extends AppCompatActivity {
                     CanBindService();
                 }
                 if(resultCode==RESULT_OK){
-                    PlayerPlayMusic(data.getIntExtra("SelectedIndex",0));
-                }
-                break;
-            case R.xml.pref_application&0xFFFF:
-                if(resultCode==RESULT_OK) {
-                    doubleMediaButtonTime = GetDoubleMediaButtonTime();
+                    PlayerPlayMusic(data.getIntExtra(PlayerService.keySelectedIndex,0));
                 }
                 break;
         }
@@ -391,10 +334,10 @@ public class MainActivity extends AppCompatActivity {
         playerService.Play();
         UpdateInterfaces(-1);
         SetTimerOn(true);
-        OnCurrentPlayingChanged();
+        playerService.OnCurrentPlayingChanged();
     }
 
-    private void OnButtonPlay(boolean stop){
+    public void OnButtonPlay(boolean stop){
         if(stop||playerService.IsPlaying()){
             playerService.Pause(stop);
             UpdateInterfaces(-1);
@@ -418,11 +361,6 @@ public class MainActivity extends AppCompatActivity {
         dbHelper.UpdateDataCounts();
     }
 
-    private void OnChangeMusic(boolean isForward){
-        playerService.SetNextMusic(isForward);
-        OnCurrentPlayingChanged();
-    }
-
     private void OnStopPlayer(){
         OnButtonPlay(true);
     }
@@ -434,13 +372,10 @@ public class MainActivity extends AppCompatActivity {
         about.setTitle(R.string.app_name);
         about.setMessage(infoAbout);
         about.setPositiveButton(android.R.string.ok,null);
-        about.setNeutralButton(R.string.button_visitUrl, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                Intent intentOpenUrl=new Intent(Intent.ACTION_VIEW);
-                intentOpenUrl.setData(Uri.parse(getString(R.string.url_author)));
-                startActivity(intentOpenUrl);
-            }
+        about.setNeutralButton(R.string.button_visitUrl, (dialogInterface, i) -> {
+            Intent intentOpenUrl=new Intent(Intent.ACTION_VIEW);
+            intentOpenUrl.setData(Uri.parse(getString(R.string.url_author)));
+            startActivity(intentOpenUrl);
         });
         about.show();
     }
@@ -450,15 +385,15 @@ public class MainActivity extends AppCompatActivity {
         menuKeepSpeed.setTitle(String.format(getString(R.string.menu_keep_speed),playerService.GetPlaybackSpeed()));
     }
 
-    private void OnCurrentPlayingChanged(){
-        playerPreferences.edit().putInt(keyLastPlayIndex,playerService.GetListCurrentPos()).apply();
-    }
-
     private BroadcastReceiver playerReceiver=new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            UpdateInterfaces(intent.getIntExtra("SelectedIndex",0));
-            OnCurrentPlayingChanged();
+            if(PlayerService.ACTION_UPDATE_BUTTON_PLAY.equals(intent.getAction())) {
+                SetTimerOn(playerService.IsPlaying());
+                UpdateInterfaces(-1);
+            }else if (PlayerService.ACTION_UPDATE_SELECTED_INDEX.equals(intent.getAction())){
+                UpdateInterfaces(intent.getIntExtra(PlayerService.keySelectedIndex,0));
+            }
         }
     };
 
@@ -490,7 +425,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private Handler handler=new Handler(){
+    private final Handler handler=new Handler(){
         @Override
         public void handleMessage(Message msg){
             switch (msg.what){
@@ -532,7 +467,6 @@ public class MainActivity extends AppCompatActivity {
                 unregisterReceiver(checkUpdateReceiver);
                 checkUpdateReceiver=null;
             }
-            lineControlSession.release();
             playerService.ReleaseService();
             unbindService(mConnection);
             stopService(new Intent(this, PlayerService.class));
@@ -575,13 +509,10 @@ public class MainActivity extends AppCompatActivity {
                 String msg = String.format(getString(R.string.message_new_version), BuildConfig.VERSION_NAME, updateChecker.GetUpdateVersionName());
                 msgBox.setMessage(msg);
                 msgBox.setIcon(android.R.drawable.ic_dialog_info);
-                msgBox.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        Intent intent=new Intent(Intent.ACTION_VIEW);
-                        intent.setData(Uri.parse(getString(R.string.url_author)));
-                        startActivity(intent);
-                    }
+                msgBox.setPositiveButton(android.R.string.ok, (dialogInterface, i) -> {
+                    Intent intent1 =new Intent(Intent.ACTION_VIEW);
+                    intent1.setData(Uri.parse(getString(R.string.url_author)));
+                    startActivity(intent1);
                 });
                 msgBox.setNegativeButton(android.R.string.cancel,null);
             }else if (onlyReportNewVersion){

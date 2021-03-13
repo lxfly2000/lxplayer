@@ -22,7 +22,7 @@
     <string name="menu_main_stop">停止播放</string>
     <string name="menu_main_about">帮助</string>
     <string name="message_about" formatted="false">这是一个简易的音乐播放器。\n*
-        该程序只能在安卓6.0及以上系统中安装。\n\n线控说明：\n0.5秒内双击为切换下一曲，长按0.5秒为切换上一曲，单击为播放/暂停。\n\n制作：lxfly2000\n版本：%s\n发布日期：%s\n程序源码：%s
+        该程序只能在安卓6.0及以上系统中安装。\n\n线控说明：\n连按两下为切换下一曲，连按三下为切换上一曲，单击为播放/暂停。\n\n制作：lxfly2000\n版本：%s\n发布日期：%s\n程序源码：%s
     </string>
     <string name="url_author">https://github.com/lxfly2000/lxplayer</string>
     <string name="button_visitUrl">访问网站</string>
@@ -47,11 +47,11 @@
     <string name="url_check_update">https://raw.githubusercontent.com/lxfly2000/lxplayer/master/app/build.gradle
     </string>
     <string name="error_permission_network">未获取到联网权限，请修改权限设置。</string>
-    <string name="label_double_click_delta">线控双击间隔（毫秒）</string>
+    <string name="label_enable_line_control">启用线控</string>
     <string name="message_settings_saved">设置已保存。</string>
     <string name="menu_custom_playback_speed">调整速度</string>
     <string name="button_restore_speed">恢复原速</string>
     <string name="menu_change_speed_keep_time">调整速度时保持时长</string>
     <string name="menu_change_speed_keep_pitch">调整速度时保持音调</string>
-    <string name="key_double_click_delta" translatable="false">double_click_delta</string>
+    <string name="key_enable_line_control" translatable="false">enable_line_control</string>
 </resources>

@@ -7,13 +7,22 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.media.MediaPlayer;
-import android.os.Binder;
-import android.os.Build;
-import android.os.IBinder;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
+import android.os.*;
+import android.util.Log;
+import android.view.KeyEvent;
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class PlayerService extends Service {
     private MediaPlayer player=null;
+    private MediaSession lineControlSession;
+    private ArrayList<Long> mediaButtonClickTime=new ArrayList<>();
     private boolean isRandom=false,isLoop=false;
     private ListDataHelper dh;
     private final IBinder mBinder=new LocalBinder();
@@ -26,29 +35,38 @@ public class PlayerService extends Service {
     public static final String ACTION_UPDATE_MAIN_INTERFACE=BuildConfig.APPLICATION_ID+".UpdateInterface";
     private NotificationManager notificationManager;
     private int notifyId=0;
-    private MediaPlayer.OnCompletionListener nextMusicListener=new MediaPlayer.OnCompletionListener() {
-        @Override
-        public void onCompletion(MediaPlayer mediaPlayer) {
-            if(!IsLoopOn())SetNextMusic(true);
-            Play();
-            UpdateNotificationBar(false);
-        }
+    public static final String keyLastPlayIndex="play_index";
+    public static final String keySelectedIndex="SelectedIndex";
+    public static final String ACTION_UPDATE_SELECTED_INDEX=BuildConfig.APPLICATION_ID+".UpdateSelectedIndex";
+    public static final String ACTION_UPDATE_BUTTON_PLAY=BuildConfig.APPLICATION_ID+".UpdateButtonPlay";
+    private MediaPlayer.OnCompletionListener nextMusicListener= mediaPlayer -> {
+        if(!IsLoopOn())SetNextMusic(true);
+        Play();
+        UpdateNotificationBar(false);
     };
+
+    private Boolean GetEnableLineControl(){
+        return getSharedPreferences(SettingsActivity.appIdentifier,MODE_PRIVATE).getBoolean(getString(R.string.key_enable_line_control),true);
+    }
 
     private BroadcastReceiver notificationReceiver=new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action=intent.getAction();
-            if(action.equals(ACTION_BACKWARD)){
-                SetNextMusic(false);
-            }else if(action.equals(ACTION_FORWARD)){
-                SetNextMusic(true);
-            }else if(action.equals(ACTION_TOGGLE_PLAY)){
-                if(IsPlaying()){
-                    Pause(false);
-                }else {
-                    Play();
-                }
+            switch (action) {
+                case ACTION_BACKWARD:
+                    SetNextMusic(false);
+                    break;
+                case ACTION_FORWARD:
+                    SetNextMusic(true);
+                    break;
+                case ACTION_TOGGLE_PLAY:
+                    if (IsPlaying()) {
+                        Pause(false);
+                    } else {
+                        Play();
+                    }
+                    break;
             }
             UpdateNotificationBar(true);
         }
@@ -75,7 +93,65 @@ public class PlayerService extends Service {
         fiNotification.addAction(ACTION_BACKWARD);
         fiNotification.addAction(ACTION_TOGGLE_PLAY);
         registerReceiver(notificationReceiver,fiNotification);
+        //注册线控回调
+        lineControlSession=new MediaSession(this,getString(R.string.app_name));
+        lineControlSession.setCallback(lineControlCallback);
+        lineControlSession.setPlaybackState(new PlaybackState.Builder()
+                .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_SKIP_TO_NEXT
+                        | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_SKIP_TO_PREVIOUS
+                        | PlaybackState.ACTION_STOP | PlaybackState.ACTION_PLAY_PAUSE)
+                .setState(PlaybackState.STATE_NONE,0,1.0f).build());
+        lineControlSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS|MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        lineControlSession.setActive(true);
+
         return mBinder;
+    }
+
+    private MediaSession.Callback lineControlCallback=new MediaSession.Callback() {
+        @Override
+        public void onSkipToNext() {
+            OnChangeMusic(true);
+            super.onSkipToNext();
+        }
+
+        @Override
+        public void onPlay() {
+            OnNoticeButtonPlay();
+            super.onPlay();
+        }
+
+        @Override
+        public void onPause() {
+            OnNoticeButtonPlay();
+            super.onPause();
+        }
+
+        @Override
+        public void onSkipToPrevious() {
+            OnChangeMusic(false);
+            super.onSkipToPrevious();
+        }
+    };
+    
+    private void OnNoticeButtonPlay(){
+        if(!GetEnableLineControl())
+            return;
+        if(IsPlaying())
+            Pause(false);
+        else
+            Play();
+        sendBroadcast(new Intent(ACTION_UPDATE_BUTTON_PLAY));
+    }
+
+    public void OnChangeMusic(boolean isForward){
+        if(!GetEnableLineControl())
+            return;
+        SetNextMusic(isForward);
+        OnCurrentPlayingChanged();
+    }
+
+    public void OnCurrentPlayingChanged(){
+        getSharedPreferences(SettingsActivity.appIdentifier,MODE_PRIVATE).edit().putInt(keyLastPlayIndex,GetListCurrentPos()).apply();
     }
 
     @Override
@@ -103,6 +179,7 @@ public class PlayerService extends Service {
             notificationReceiver=null;
         }
         player.stop();
+        lineControlSession.release();
         stopForeground(true);
     }
 
@@ -180,12 +257,12 @@ public class PlayerService extends Service {
             else SetPlayIndex((playlistCurrentPos+dh.GetDataCount()-1)%dh.GetDataCount());
         }
         if(playing)Play();
-        Intent intent=new Intent(getPackageName());
-        intent.putExtra("SelectedIndex",playlistCurrentPos);
+        Intent intent=new Intent(ACTION_UPDATE_SELECTED_INDEX);
+        intent.putExtra(keySelectedIndex,playlistCurrentPos);
         sendBroadcast(intent);
     }
 
-    private String notifyChannelId=BuildConfig.APPLICATION_ID;
+    private static final String notifyChannelId=BuildConfig.APPLICATION_ID;
 
     private void RegisterNotifyIdChannel(){
         //https://blog.csdn.net/qq_15527709/article/details/78853048
