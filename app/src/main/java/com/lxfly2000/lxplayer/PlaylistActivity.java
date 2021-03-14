@@ -33,18 +33,10 @@ public class PlaylistActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         listView=(ListView)findViewById(R.id.listView);
         registerForContextMenu(listView);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                PlaySelectedItem(position);
-            }
-        });
-        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long l) {
-                selectedListItemIndex=position;
-                return false;
-            }
+        listView.setOnItemClickListener((adapterView, view, position, l) -> PlaySelectedItem(position));
+        listView.setOnItemLongClickListener((adapterView, view, position, l) -> {
+            selectedListItemIndex=position;
+            return false;
         });
         dh=ListDataHelper.getInstance(this);
         if(getIntent().getBooleanExtra("ShouldFinish",false))ReloadList(true);
@@ -179,7 +171,9 @@ public class PlaylistActivity extends AppCompatActivity {
 
     private void AddFile(Intent data){
         Uri uri=data.getData();
-        String path=FileUtils.getPath(this,uri);
+        String path=FileUtils.getAudioPath(this,uri);
+        if(path==null)
+            path=FileUtils.getVideoPath(this,uri);
         if(path==null){
             Toast.makeText(this,R.string.message_cannot_catchFilepath,Toast.LENGTH_SHORT).show();
             return;
@@ -203,10 +197,10 @@ public class PlaylistActivity extends AppCompatActivity {
 }
 
 class FileUtils {
-    static String getPath(Context context, Uri uri) {
+    static String getPath(Context context, Uri uri,String keyProjection,Uri qUri) {
 
         if ("content".equalsIgnoreCase(uri.getScheme())) {
-            String[] projection = { MediaStore.Audio.Media.DATA };
+            String[] projection = { keyProjection };
             Cursor cursor;
 
             try {
@@ -219,7 +213,7 @@ class FileUtils {
                             //Android 4.4 or later.
                             //https://stackoverflow.com/a/41520090
                             String args[]=new String[]{DocumentsContract.getDocumentId(uri).split(":")[1]};
-                            uri=MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                            uri=qUri;
                             cursor=context.getContentResolver().query(uri,projection,"_id=?",args,null);
                             column_index=cursor.getColumnIndexOrThrow(projection[0]);
                             if(cursor.moveToFirst())
@@ -240,5 +234,13 @@ class FileUtils {
         }
 
         return null;
+    }
+
+    static String getAudioPath(Context context,Uri uri){
+        return getPath(context,uri,MediaStore.Audio.Media.DATA,MediaStore.Audio.Media.EXTERNAL_CONTENT_URI);
+    }
+
+    static String getVideoPath(Context context,Uri uri){
+        return getPath(context,uri,MediaStore.Video.Media.DATA,MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
     }
 }

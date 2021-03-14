@@ -9,20 +9,14 @@ import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
-import android.os.*;
-import android.util.Log;
-import android.view.KeyEvent;
-import androidx.annotation.NonNull;
+import android.os.Binder;
+import android.os.Build;
+import android.os.IBinder;
 import androidx.annotation.RequiresApi;
-
-import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class PlayerService extends Service {
     private MediaPlayer player=null;
     private MediaSession lineControlSession;
-    private ArrayList<Long> mediaButtonClickTime=new ArrayList<>();
     private boolean isRandom=false,isLoop=false;
     private ListDataHelper dh;
     private final IBinder mBinder=new LocalBinder();
@@ -39,7 +33,7 @@ public class PlayerService extends Service {
     public static final String keySelectedIndex="SelectedIndex";
     public static final String ACTION_UPDATE_SELECTED_INDEX=BuildConfig.APPLICATION_ID+".UpdateSelectedIndex";
     public static final String ACTION_UPDATE_BUTTON_PLAY=BuildConfig.APPLICATION_ID+".UpdateButtonPlay";
-    private MediaPlayer.OnCompletionListener nextMusicListener= mediaPlayer -> {
+    private final MediaPlayer.OnCompletionListener nextMusicListener= mediaPlayer -> {
         if(!IsLoopOn())SetNextMusic(true);
         Play();
         UpdateNotificationBar(false);
@@ -107,7 +101,7 @@ public class PlayerService extends Service {
         return mBinder;
     }
 
-    private MediaSession.Callback lineControlCallback=new MediaSession.Callback() {
+    private final MediaSession.Callback lineControlCallback=new MediaSession.Callback() {
         @Override
         public void onSkipToNext() {
             OnChangeMusic(true);
