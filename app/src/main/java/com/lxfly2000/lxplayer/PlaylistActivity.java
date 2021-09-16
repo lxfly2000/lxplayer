@@ -9,15 +9,19 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
-import androidx.cursoradapter.widget.SimpleCursorAdapter;
-import androidx.appcompat.app.AppCompatActivity;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.cursoradapter.widget.SimpleCursorAdapter;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Locale;
 
 public class PlaylistActivity extends AppCompatActivity {
     private ListDataHelper dh;
@@ -57,7 +61,8 @@ public class PlaylistActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
         switch (item.getItemId()){
-            case R.id.action_playlist_add:return OnAddFile();
+            case R.id.action_playlist_add:return OnAddFile(R.id.action_playlist_add&0xFFFF);
+            case R.id.action_playlist_add_dir:return OnAddFile(R.id.action_playlist_add_dir&0xFFFF);
             case R.id.action_playlist_refresh:return OnRefresh();
             case R.id.action_playlist_clear:return OnClearList();
             case android.R.id.home:return OnBackButton();
@@ -101,7 +106,7 @@ public class PlaylistActivity extends AppCompatActivity {
      *
      * @return 成功返回true, 否则为false
      */
-    private boolean OnAddFile(){
+    private boolean OnAddFile(int reqCode){
         //参考：http://www.bkjia.com/Androidjc/1075240.html
         //同时指定多种格式：https://blog.csdn.net/a840347/article/details/102602241
         Intent intent=new Intent(Intent.ACTION_GET_CONTENT);
@@ -109,7 +114,7 @@ public class PlaylistActivity extends AppCompatActivity {
         intent.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"audio/*","video/*"});
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         try {
-            startActivityForResult(Intent.createChooser(intent, getString(R.string.title_chooseFile)), R.id.action_playlist_add & 0xFFFF);
+            startActivityForResult(Intent.createChooser(intent, getString(R.string.title_chooseFile)), reqCode);
         }catch (ActivityNotFoundException e){
             Toast.makeText(this,R.string.message_no_filechooser,Toast.LENGTH_SHORT).show();
             return false;
@@ -166,6 +171,7 @@ public class PlaylistActivity extends AppCompatActivity {
         if(resultCode!=RESULT_OK)return;
         switch (requestCode){
             case R.id.action_playlist_add&0xFFFF:AddFile(data);break;
+            case R.id.action_playlist_add_dir&0xFFFF:AddDir(data);break;
         }
     }
 
@@ -188,6 +194,57 @@ public class PlaylistActivity extends AppCompatActivity {
         values.put(MediaStore.Audio.Media.DATA,path);
         dh.insertValue(values);
         DisplayList();
+    }
+
+    private boolean IsAcceptableExtension(String path){
+        String[]extensions={"mp3","wav","aiff","m4a","mpg","avi","flac","wma","ape","ogg","mp4"};
+        String[]parts=path.split("/");
+        if(parts.length<2)
+            return false;
+        String[]fileParts=parts[parts.length-1].split("\\.");
+        if(fileParts.length<2)
+            return false;
+        String ext=fileParts[fileParts.length-1];
+        for(String e:extensions){
+            if(ext.toLowerCase(Locale.ROOT).equals(e))
+                return true;
+        }
+        return false;
+    }
+
+    private void AddDir(Intent data){
+        Uri uri=data.getData();
+        String path=FileUtils.getAudioPath(this,uri);
+        if(path==null)
+            path=FileUtils.getVideoPath(this,uri);
+        if(path==null){
+            Toast.makeText(this,R.string.message_cannot_catchFilepath,Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String dir=path.substring(0,path.lastIndexOf('/'));
+        ContentValues values=new ContentValues();
+        File file=new File(dir);
+        File[]fs=file.listFiles();
+        ArrayList<String>list=new ArrayList<>();
+        if(fs!=null&&fs.length>0) {
+            for (File f : fs) {
+                if (!f.isDirectory()) {
+                    path = f.getPath();
+                    if (IsAcceptableExtension(path)) {
+                        list.add(path);
+                    }
+                }
+            }
+        }
+        Collections.sort(list, String::compareTo);
+        for(String str:list){
+            String[]parts=str.split("/");
+            values.put(MediaStore.Audio.Media.TITLE,parts[parts.length-1]);
+            values.put(MediaStore.Audio.Media.DATA,str);
+            dh.insertValue(values);
+        }
+        DisplayList();
+        Toast.makeText(this,getString(R.string.message_add_count,list.size()),Toast.LENGTH_SHORT).show();
     }
 
     private int GetIdOfChosenItem(int position){
@@ -224,7 +281,6 @@ class FileUtils {
                     cursor.close();
                 }
             } catch (Exception e) {
-                // Eat it
                 Toast.makeText(context,e.getMessage(),Toast.LENGTH_SHORT).show();
             }
         }

@@ -54,4 +54,6 @@
     <string name="menu_change_speed_keep_time">调整速度时保持时长</string>
     <string name="menu_change_speed_keep_pitch">调整速度时保持音调</string>
     <string name="key_enable_line_control" translatable="false">enable_line_control</string>
+    <string name="menu_playlist_add_dir">添加目录</string>
+    <string name="message_add_count">已添加%d个文件。</string>
 </resources>

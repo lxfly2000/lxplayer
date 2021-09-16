@@ -10,8 +10,10 @@
           android:title="@string/menu_playlist_add"
           android:orderInCategory="101"
           app:showAsAction="never"/>
+    <item android:title="@string/menu_playlist_add_dir" android:id="@+id/action_playlist_add_dir"
+          android:orderInCategory="102" app:showAsAction="never"/>
     <item android:id="@+id/action_playlist_clear"
           android:title="@string/menu_playlist_clear"
-          android:orderInCategory="102"
+          android:orderInCategory="103"
           app:showAsAction="never"/>
 </menu>
