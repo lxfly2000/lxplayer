@@ -230,7 +230,7 @@ public class PlaylistActivity extends AppCompatActivity {
             for (File f : fs) {
                 if (!f.isDirectory()) {
                     path = f.getPath();
-                    if (IsAcceptableExtension(path)) {
+                    if (IsAcceptableExtension(path)&&!dh.ifExists(path)) {
                         list.add(path);
                     }
                 }
