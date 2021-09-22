@@ -337,7 +337,6 @@ public class MainActivity extends AppCompatActivity {
         playerService.Play();
         UpdateInterfaces(-1);
         SetTimerOn(true);
-        playerService.OnCurrentPlayingChanged();
     }
 
     public void OnButtonPlay(boolean stop){

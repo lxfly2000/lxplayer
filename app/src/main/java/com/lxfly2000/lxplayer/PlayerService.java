@@ -34,7 +34,7 @@ public class PlayerService extends Service {
     public static final String ACTION_UPDATE_SELECTED_INDEX=BuildConfig.APPLICATION_ID+".UpdateSelectedIndex";
     public static final String ACTION_UPDATE_BUTTON_PLAY=BuildConfig.APPLICATION_ID+".UpdateButtonPlay";
     private final MediaPlayer.OnCompletionListener nextMusicListener= mediaPlayer -> {
-        if(!IsLoopOn())SetNextMusic(true);
+        if(!IsLoopOn())OnChangeMusic(true);
         Play();
         UpdateNotificationBar(false);
     };
@@ -49,10 +49,10 @@ public class PlayerService extends Service {
             String action=intent.getAction();
             switch (action) {
                 case ACTION_BACKWARD:
-                    SetNextMusic(false);
+                    OnChangeMusic(false);
                     break;
                 case ACTION_FORWARD:
-                    SetNextMusic(true);
+                    OnChangeMusic(true);
                     break;
                 case ACTION_TOGGLE_PLAY:
                     if (IsPlaying()) {
@@ -104,32 +104,34 @@ public class PlayerService extends Service {
     private final MediaSession.Callback lineControlCallback=new MediaSession.Callback() {
         @Override
         public void onSkipToNext() {
-            OnChangeMusic(true);
+            if(GetEnableLineControl())
+                OnChangeMusic(true);
             super.onSkipToNext();
         }
 
         @Override
         public void onPlay() {
-            OnNoticeButtonPlay();
+            if(GetEnableLineControl())
+                OnNoticeButtonPlay();
             super.onPlay();
         }
 
         @Override
         public void onPause() {
-            OnNoticeButtonPlay();
+            if(GetEnableLineControl())
+                OnNoticeButtonPlay();
             super.onPause();
         }
 
         @Override
         public void onSkipToPrevious() {
-            OnChangeMusic(false);
+            if(GetEnableLineControl())
+                OnChangeMusic(false);
             super.onSkipToPrevious();
         }
     };
     
     private void OnNoticeButtonPlay(){
-        if(!GetEnableLineControl())
-            return;
         if(IsPlaying())
             Pause(false);
         else
@@ -138,8 +140,6 @@ public class PlayerService extends Service {
     }
 
     public void OnChangeMusic(boolean isForward){
-        if(!GetEnableLineControl())
-            return;
         SetNextMusic(isForward);
         OnCurrentPlayingChanged();
     }
