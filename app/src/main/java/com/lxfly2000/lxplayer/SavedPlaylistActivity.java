@@ -139,6 +139,7 @@ public class SavedPlaylistActivity extends AppCompatActivity {
         //保存到列表
         StringBuilder sb=new StringBuilder();
         ListDataHelper dh=ListDataHelper.getInstance();
+        dh.UpdateDataCounts();
         for(int i=0;i<dh.GetDataCount();i++){
             sb.append(dh.GetPathByIndex(i)).append('\n');
         }
