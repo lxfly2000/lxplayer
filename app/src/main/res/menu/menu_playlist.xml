@@ -16,4 +16,8 @@
           android:title="@string/menu_playlist_clear"
           android:orderInCategory="103"
           app:showAsAction="never"/>
+    <item android:id="@+id/action_view_saved_playlist"
+          android:title="@string/title_saved_playlist"
+          android:orderInCategory="104"
+          app:showAsAction="never"/>
 </menu>

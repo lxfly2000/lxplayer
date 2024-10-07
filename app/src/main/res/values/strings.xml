@@ -5,6 +5,16 @@
     <string name="menu_playlist_refresh">重建播放列表</string>
     <string name="menu_playlist_add">增加文件</string>
     <string name="menu_playlist_clear">清空列表</string>
+    <string name="menu_playlist_save">保存播放列表</string>
+    <string name="menu_playlist_delete">删除播放列表</string>
+    <string name="title_saved_playlist">已保存的播放列表</string>
+    <string name="file_playlist_default_name" formatted="false">播放列表 %s</string>
+    <string name="title_enter_name">输入名称</string>
+    <string name="msg_save_playlist_fail_exists">保存播放列表失败：\n该名称已存在。</string>
+    <string name="msg_save_playlist_fail_invalid_char">保存播放列表失败：\n非法字符。</string>
+    <string name="msg_save_playlist_fail">保存播放列表失败。</string>
+    <string name="msg_cannot_be_empty">不能为空。</string>
+    <string name="msg_warning_replace_playlist">替换当前播放列表？</string>
     <string name="menu_playlist_pop_delete">从列表中移除</string>
     <string name="menu_playlist_deleteChosen">移除选定项目</string>
     <string name="menu_playlist_choose">选择多项</string>
@@ -33,7 +43,8 @@
     <string name="menu_exitApp">关闭程序</string>
     <string name="message_error_randomOnLoop">循环开启时无效。</string>
     <string name="message_unknownOperation">未知操作。</string>
-    <string name="message_error_permission_exstorage">无法查询文件信息，请检查应用是否有读取外置存储卡的权限。</string>
+    <string name="message_error_permission_exstorage">无法查询文件信息，请检查应用是否有读取外置存储卡或媒体文件的权限。</string>
+    <string name="message_error_permission_notify">无法发送通知，这会导致状态栏的控制功能不可用。</string>
     <string name="title_chooseFile">选择文件</string>
     <string name="message_no_filechooser">没有可用的文件浏览器。</string>
     <string name="message_cannot_catchFilepath">未获取到文件，请选择其他浏览器。</string>

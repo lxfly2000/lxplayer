@@ -86,7 +86,7 @@ public class PlayerService extends Service {
         fiNotification.addAction(ACTION_FORWARD);
         fiNotification.addAction(ACTION_BACKWARD);
         fiNotification.addAction(ACTION_TOGGLE_PLAY);
-        registerReceiver(notificationReceiver,fiNotification);
+        registerReceiver(notificationReceiver,fiNotification,RECEIVER_EXPORTED);
         //注册线控回调
         lineControlSession=new MediaSession(this,getString(R.string.app_name));
         lineControlSession.setCallback(lineControlCallback);
@@ -181,6 +181,8 @@ public class PlayerService extends Service {
         if(index==-1)return;
         try {
             player.reset();
+            if(index>=dh.GetDataCount())
+                return;
             player.setDataSource(dh.GetPathByIndex(index));
             player.prepare();
             playlistCurrentPos=index;
@@ -260,7 +262,7 @@ public class PlayerService extends Service {
 
     private void RegisterNotifyIdChannel(){
         //https://blog.csdn.net/qq_15527709/article/details/78853048
-        String notifyChannelName = "LxPlayer Channel";
+        String notifyChannelName = "LxPlayer Music Player";
         NotificationChannel notificationChannel = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             notificationChannel = new NotificationChannel(notifyChannelId,
@@ -280,13 +282,13 @@ public class PlayerService extends Service {
         ListDataHelper dbHelper=ListDataHelper.getInstance(getApplicationContext());
         //参考：http://blog.csdn.net/yyingwei/article/details/8509402
         Intent notificationIntent=new Intent(this,MainActivity.class);
-        PendingIntent pendingIntent=PendingIntent.getActivity(this,0,notificationIntent,0);
+        PendingIntent pendingIntent=PendingIntent.getActivity(this,0,notificationIntent,PendingIntent.FLAG_MUTABLE);
         Intent iBackward=new Intent(ACTION_BACKWARD);
         Intent iTogglePlay=new Intent(ACTION_TOGGLE_PLAY);
         Intent iForward=new Intent(ACTION_FORWARD);
-        PendingIntent piBackward=PendingIntent.getBroadcast(this,0,iBackward,0);
-        PendingIntent piTogglePlay=PendingIntent.getBroadcast(this,0,iTogglePlay,0);
-        PendingIntent piForward=PendingIntent.getBroadcast(this,0,iForward,0);
+        PendingIntent piBackward=PendingIntent.getBroadcast(this,0,iBackward,PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent piTogglePlay=PendingIntent.getBroadcast(this,0,iTogglePlay,PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent piForward=PendingIntent.getBroadcast(this,0,iForward,PendingIntent.FLAG_IMMUTABLE);
         Notification.MediaStyle style=new Notification.MediaStyle()
                 .setShowActionsInCompactView(1);
         Notification.Builder notifBuilder=new Notification.Builder(this);

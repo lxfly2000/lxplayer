@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="@string/menu_playlist_save" android:id="@+id/action_saved_playlist_save"
+          android:icon="@drawable/baseline_save_as_24" app:showAsAction="ifRoom"/>
+    <item android:title="@string/menu_playlist_delete" android:id="@+id/action_saved_playlist_delete"
+          android:icon="@drawable/baseline_playlist_remove_24" app:showAsAction="ifRoom"/>
+</menu>

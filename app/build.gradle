@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion '29.0.0'
+    namespace 'com.lxfly2000.lxplayer'
+    compileSdkVersion 34
     defaultConfig {
         applicationId 'com.lxfly2000.lxplayer'
-        minSdkVersion 23
-        targetSdkVersion 28
-        versionCode 19
-        versionName "1.9.3"
+        minSdkVersion 26
+        targetSdkVersion 34
+        versionCode 20
+        versionName "1.9.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "BUILD_DATE", "\"" + new Date().format("yyyy-M-d") + "\""
     }
@@ -18,7 +18,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug{
-            applicationIdSuffix 'debug'
+            applicationIdSuffix '.debug'
         }
     }
     productFlavors {
@@ -26,6 +26,9 @@ android {
     compileOptions{
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildFeatures{
+        buildConfig true
     }
 }
 

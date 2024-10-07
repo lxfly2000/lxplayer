@@ -65,6 +65,7 @@ public class PlaylistActivity extends AppCompatActivity {
             case R.id.action_playlist_add_dir:return OnAddFile(R.id.action_playlist_add_dir&0xFFFF);
             case R.id.action_playlist_refresh:return OnRefresh();
             case R.id.action_playlist_clear:return OnClearList();
+            case R.id.action_view_saved_playlist:return OnViewSavedPlaylist();
             case android.R.id.home:return OnBackButton();
         }
         return super.onOptionsItemSelected(item);
@@ -166,12 +167,25 @@ public class PlaylistActivity extends AppCompatActivity {
         return true;
     }
 
+    private boolean OnViewSavedPlaylist(){
+        startActivityForResult(new Intent(this,SavedPlaylistActivity.class),R.id.action_view_saved_playlist&0xFFFF);
+        return true;
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
         if(resultCode!=RESULT_OK)return;
         switch (requestCode){
             case R.id.action_playlist_add&0xFFFF:AddFile(data);break;
             case R.id.action_playlist_add_dir&0xFFFF:AddDir(data);break;
+            case R.id.action_view_saved_playlist&0xFFFF:OnFinishViewSavedPlaylist(data);break;
+        }
+    }
+
+    private void OnFinishViewSavedPlaylist(Intent data){
+        if(data.getBooleanExtra(SavedPlaylistActivity.EXTRA_NEED_REFRESH_LIST,false)){
+            //刷新列表
+            DisplayList();
         }
     }
 

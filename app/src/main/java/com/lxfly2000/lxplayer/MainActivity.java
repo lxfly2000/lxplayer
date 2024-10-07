@@ -5,14 +5,12 @@ import android.app.ActivityManager;
 import android.content.*;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
+import android.os.*;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -40,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean seekBarIsSeeking=false;
     private boolean listIsLoading=false;
     private static final String keyKeepSpeed="keep_speed",keyKeepTime="keep_time",keyKeepPitch="keep_pitch";
-    private static final int requestCodeReadStorage=0;
+    private static final int requestCodeReadStorage=0,requestCodeReadAudio=1,requestCodeReadVideo=2,requestCodeNotify=3;
     private SharedPreferences playerPreferences;
 
     private boolean IsServiceStarted(String serviceName){
@@ -90,18 +88,63 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        AppInit(false);
+        for(int i=0;i<grantResults.length;i++){
+            if(grantResults[i]!=PackageManager.PERMISSION_GRANTED){
+                AppInit(false);
+                return;
+            }
+        }
+        AppInit(true);
     }
 
     private void AppInit(boolean needRequestPermissions){
         //检查权限设置
-        if(checkCallingOrSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED){
+        if(Build.VERSION.SDK_INT<=32&&checkCallingOrSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED){
             if(needRequestPermissions){
                 requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},requestCodeReadStorage);
             }else {
                 AlertDialog.Builder about = new AlertDialog.Builder(this);
                 about.setTitle(R.string.app_name);
                 about.setMessage(R.string.message_error_permission_exstorage);
+                about.setPositiveButton(android.R.string.ok, null);
+                about.setOnDismissListener(dialogInterface -> ExitApplication(true));
+                about.show();
+            }
+            return;
+        }
+        if(Build.VERSION.SDK_INT>32&&checkCallingOrSelfPermission(Manifest.permission.READ_MEDIA_AUDIO)!=PackageManager.PERMISSION_GRANTED){
+            if(needRequestPermissions){
+                requestPermissions(new String[]{Manifest.permission.READ_MEDIA_AUDIO},requestCodeReadAudio);
+            }else {
+                AlertDialog.Builder about = new AlertDialog.Builder(this);
+                about.setTitle(R.string.app_name);
+                about.setMessage(R.string.message_error_permission_exstorage);
+                about.setPositiveButton(android.R.string.ok, null);
+                about.setOnDismissListener(dialogInterface -> ExitApplication(true));
+                about.show();
+            }
+            return;
+        }
+        if(Build.VERSION.SDK_INT>32&&checkCallingOrSelfPermission(Manifest.permission.READ_MEDIA_VIDEO)!=PackageManager.PERMISSION_GRANTED){
+            if(needRequestPermissions){
+                requestPermissions(new String[]{Manifest.permission.READ_MEDIA_VIDEO},requestCodeReadVideo);
+            }else {
+                AlertDialog.Builder about = new AlertDialog.Builder(this);
+                about.setTitle(R.string.app_name);
+                about.setMessage(R.string.message_error_permission_exstorage);
+                about.setPositiveButton(android.R.string.ok, null);
+                about.setOnDismissListener(dialogInterface -> ExitApplication(true));
+                about.show();
+            }
+            return;
+        }
+        if(Build.VERSION.SDK_INT>32&&checkCallingOrSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){
+            if(needRequestPermissions){
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},requestCodeNotify);
+            }else {
+                AlertDialog.Builder about = new AlertDialog.Builder(this);
+                about.setTitle(R.string.app_name);
+                about.setMessage(R.string.message_error_permission_notify);
                 about.setPositiveButton(android.R.string.ok, null);
                 about.setOnDismissListener(dialogInterface -> ExitApplication(true));
                 about.show();
@@ -122,13 +165,13 @@ public class MainActivity extends AppCompatActivity {
         IntentFilter fiPlayer=new IntentFilter();
         fiPlayer.addAction(PlayerService.ACTION_UPDATE_SELECTED_INDEX);
         fiPlayer.addAction(PlayerService.ACTION_UPDATE_BUTTON_PLAY);
-        registerReceiver(playerReceiver,fiPlayer);
+        registerReceiver(playerReceiver,fiPlayer,RECEIVER_EXPORTED);
 
         //注册通知栏广播接收器
-        registerReceiver(notificationReceiver,new IntentFilter(PlayerService.ACTION_UPDATE_MAIN_INTERFACE));
+        registerReceiver(notificationReceiver,new IntentFilter(PlayerService.ACTION_UPDATE_MAIN_INTERFACE),RECEIVER_EXPORTED);
 
         //注册检查更新广播接收器
-        registerReceiver(checkUpdateReceiver,new IntentFilter(ACTION_CHECK_UPDATE_RESULT));
+        registerReceiver(checkUpdateReceiver,new IntentFilter(ACTION_CHECK_UPDATE_RESULT),RECEIVER_EXPORTED);
         //检测更新
         CheckForUpdate(true);
     }
@@ -427,22 +470,33 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private final Handler handler=new Handler(){
+    static class SeekHandler extends Handler{
         @Override
-        public void handleMessage(Message msg){
+        public void handleMessage(@NonNull Message msg) {
             switch (msg.what){
                 case R.id.seekBar:
-                    UpdateSeekBar();break;
+                    if(context!=null){
+                        ((MainActivity)context).UpdateSeekBar();
+                    }
+                    break;
             }
             super.handleMessage(msg);
         }
-    };
+
+        private Context context;
+        public void SetContext(Context ctx){
+            context=ctx;
+        }
+    }
+
+    private final SeekHandler handler= new SeekHandler();
 
     class SeekTimerTask extends TimerTask{
         @Override
         public void run() {
             Message msg=new Message();
             msg.what=R.id.seekBar;
+            handler.SetContext(MainActivity.this);
             handler.sendMessage(msg);
         }
     }
@@ -510,7 +564,7 @@ public class MainActivity extends AppCompatActivity {
             if (foundNewVersion) {
                 String msg = String.format(getString(R.string.message_new_version), BuildConfig.VERSION_NAME, updateChecker.GetUpdateVersionName());
                 msgBox.setMessage(msg);
-                msgBox.setIcon(android.R.drawable.ic_dialog_info);
+                msgBox.setIcon(R.drawable.baseline_info_24);
                 msgBox.setPositiveButton(android.R.string.ok, (dialogInterface, i) -> {
                     Intent intent1 =new Intent(Intent.ACTION_VIEW);
                     intent1.setData(Uri.parse(getString(R.string.url_author)));
@@ -521,7 +575,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }else if (updateChecker.IsError()){
                 msgBox.setMessage(R.string.error_check_update);
-                msgBox.setIcon(android.R.drawable.ic_dialog_alert);
+                msgBox.setIcon(R.drawable.baseline_warning_24);
             }else {
                 msgBox.setMessage(R.string.message_no_update);
             }

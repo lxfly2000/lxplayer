@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("io.github.lxfly2000.lxplayer", appContext.getPackageName());
+        assertEquals("com.lxfly2000.lxplayer", appContext.getPackageName());
     }
 }

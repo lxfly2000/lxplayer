@@ -6,7 +6,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fitsSystemWindows="true"
-        tools:context="io.github.lxfly2000.lxplayer.MainActivity">
+        tools:context="com.lxfly2000.lxplayer.MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
             android:layout_height="wrap_content"
@@ -30,6 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="@dimen/fab_margin"
-            android:src="@drawable/button_playlist"/>
+            android:src="@drawable/baseline_list_24" android:tint="#FFFFFF"
+            android:contentDescription="@string/title_playlist"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
