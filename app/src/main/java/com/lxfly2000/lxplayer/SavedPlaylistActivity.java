@@ -69,6 +69,7 @@ public class SavedPlaylistActivity extends AppCompatActivity {
             }
         }
         //文件名列表实际上不需要拖动排序，而是要按名称或修改时间等排序
+        //参考：https://www.digitalocean.com/community/tutorials/android-recyclerview-drag-and-drop
         //ItemMoveCallback callback=new ItemMoveCallback(playlistAdapter);
         //ItemTouchHelper helper=new ItemTouchHelper(callback);
         //helper.attachToRecyclerView(recyclerView);
