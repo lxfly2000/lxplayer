@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecyclerViewAdapter.ItemViewHolder>{
     public static class ItemViewHolder extends RecyclerView.ViewHolder{
@@ -21,6 +22,10 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
             rootView=itemView.getRootView();
             textView=itemView.findViewById(R.id.textViewPlaylistName);
             checkBox=itemView.findViewById(R.id.checkBoxPlaylistName);
+        }
+
+        public View GetRootView() {
+            return rootView;
         }
 
         public void SetName(String name){
@@ -60,6 +65,10 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
     private boolean isEditing=false;
     public MyItemRecyclerViewAdapter(){
         localDataSet=new ArrayList<>();
+    }
+
+    public void Swap(int a,int b){
+        Collections.swap(localDataSet,a,b);
     }
 
     @NonNull

@@ -10,12 +10,14 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 
 import static com.lxfly2000.utilities.FileUtility.ReadFile;
@@ -66,6 +68,10 @@ public class SavedPlaylistActivity extends AppCompatActivity {
                 }
             }
         }
+        //文件名列表实际上不需要拖动排序，而是要按名称或修改时间等排序
+        //ItemMoveCallback callback=new ItemMoveCallback(playlistAdapter);
+        //ItemTouchHelper helper=new ItemTouchHelper(callback);
+        //helper.attachToRecyclerView(recyclerView);
     }
 
     @Override
