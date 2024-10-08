@@ -52,23 +52,29 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
     }
 
     public static class ItemData{
-        ItemData(){this("");}
-        ItemData(String _name){this(_name,false);}
-        ItemData(String _name,boolean _checked){
-            name=_name;
+        ItemData(){this("","");}
+        ItemData(String _name,String _value){this(_name,_value,false);}
+        ItemData(String _name,String _value,boolean _checked){
+            textName=_name;
+            textValue=_value;
             checked=_checked;
         }
-        String name;
+        String textName,textValue;
         boolean checked;
     }
     private ArrayList<ItemData> localDataSet;
-    private boolean isEditing=false;
+    private boolean isEditing=false,showValue=false;
     public MyItemRecyclerViewAdapter(){
         localDataSet=new ArrayList<>();
     }
 
     public void Swap(int a,int b){
         Collections.swap(localDataSet,a,b);
+    }
+
+    public void SetShowValue(boolean b){
+        showValue=b;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -80,12 +86,15 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
 
     @Override
     public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
-        holder.SetName(localDataSet.get(position).name);
+        if(showValue)
+            holder.SetName(localDataSet.get(position).textName+"\n"+localDataSet.get(position).textValue);
+        else
+            holder.SetName(localDataSet.get(position).textName);
         holder.SetChecked(localDataSet.get(position).checked);
         holder.SetIsChoosing(isEditing);
         holder.SetOnItemClickListener(view -> {
             if(!isEditing&&onPlaylistSelectedListener!=null)
-                onPlaylistSelectedListener.onPlaylistSelected(localDataSet.get(position).name);
+                onPlaylistSelectedListener.onPlaylistSelected(position,localDataSet.get(position).textName,localDataSet.get(position).textValue);
         });
         holder.SetOnCheckChangedListener((compoundButton, b) -> localDataSet.get(position).checked=b);
     }
@@ -95,14 +104,14 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
         return localDataSet.size();
     }
 
-    public void AddList(String name){
-        localDataSet.add(new ItemData(name));
+    public void AddList(String name,String value){
+        localDataSet.add(new ItemData(name,value));
         notifyItemInserted(localDataSet.size()-1);
     }
 
-    public void DeleteList(String name){
+    public void DeleteList(String value){
         for(int i=0;i<localDataSet.size();i++){
-            if(name.compareTo(localDataSet.get(i).name)==0){
+            if(value.compareTo(localDataSet.get(i).textValue)==0){
                 localDataSet.remove(i);
                 notifyItemRemoved(i);
                 return;
@@ -110,10 +119,15 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
         }
     }
 
-    public void DeleteChecked(OnPlaylistSelectedListener deleteNameListener){
+    public void ClearList(){
+        localDataSet.clear();
+        notifyDataSetChanged();
+    }
+
+    public void DeleteCheckedItems(OnPlaylistSelectedListener deleteNameListener){
         for(int i=0;i<localDataSet.size();){
             if(localDataSet.get(i).checked){
-                deleteNameListener.onPlaylistSelected(localDataSet.get(i).name);
+                deleteNameListener.onPlaylistSelected(i,localDataSet.get(i).textName,localDataSet.get(i).textValue);
                 localDataSet.remove(i);
                 notifyItemRemoved(i);
             }else {
@@ -137,7 +151,7 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
     }
 
     public interface OnPlaylistSelectedListener{
-        void onPlaylistSelected(String name);
+        void onPlaylistSelected(int pos,String name,String value);
     }
     private OnPlaylistSelectedListener onPlaylistSelectedListener=null;
     public void SetOnPlaylistClickListener(OnPlaylistSelectedListener listener){

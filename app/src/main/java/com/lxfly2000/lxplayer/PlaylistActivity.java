@@ -5,6 +5,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
@@ -17,6 +19,10 @@ import android.widget.ListView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cursoradapter.widget.SimpleCursorAdapter;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -25,8 +31,9 @@ import java.util.Locale;
 
 public class PlaylistActivity extends AppCompatActivity {
     private ListDataHelper dh;
-    private ListView listView;
-    private int selectedListItemIndex;
+    private RecyclerView listRecycler;
+    private FloatingActionButton fabDelete;
+    MyItemRecyclerViewAdapter musicListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,16 +42,36 @@ public class PlaylistActivity extends AppCompatActivity {
 
         //https://stackoverflow.com/questions/14545139/android-back-button-in-the-title-bar
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        listView=(ListView)findViewById(R.id.listView);
-        registerForContextMenu(listView);
-        listView.setOnItemClickListener((adapterView, view, position, l) -> PlaySelectedItem(position));
-        listView.setOnItemLongClickListener((adapterView, view, position, l) -> {
-            selectedListItemIndex=position;
-            return false;
+        listRecycler=findViewById(R.id.listRecycler);
+        fabDelete=findViewById(R.id.fabDeleteMusic);
+
+        fabDelete.setOnClickListener(view -> {
+            musicListAdapter.DeleteCheckedItems((pos,name,value) -> {
+                //在播放列表DB中删除歌曲
+                dh.delId(dh.GetIdByIndex(pos));
+            });
+            //因为adapter本身就有对视图的操作因此执行完后就不用再调用DisplayList()了
+            OnDeleteMusic(true);
         });
+
+        LinearLayoutManager linearLayoutManager=new LinearLayoutManager(this);
+        linearLayoutManager.setOrientation(RecyclerView.VERTICAL);
+        listRecycler.setLayoutManager(linearLayoutManager);
+        musicListAdapter=new MyItemRecyclerViewAdapter();
+        OnDeleteMusic(true);
+        musicListAdapter.SetOnPlaylistClickListener((pos, name, value) -> PlaySelectedItem(pos));
+        listRecycler.setAdapter(musicListAdapter);
+        musicListAdapter.SetShowValue(true);
         dh=ListDataHelper.getInstance(this);
         if(getIntent().getBooleanExtra("ShouldFinish",false))ReloadList(true);
+        //填充初始数据
         DisplayList();
+        //开启长按拖动排序
+        //参考：https://www.digitalocean.com/community/tutorials/android-recyclerview-drag-and-drop
+        ItemMoveCallback callback=new ItemMoveCallback(musicListAdapter);
+        callback.SetOnItemMovedListener((fromPos, toPos) -> dh.SwapIndex(fromPos,toPos));
+        ItemTouchHelper helper=new ItemTouchHelper(callback);
+        helper.attachToRecyclerView(listRecycler);
     }
 
     @Override
@@ -55,6 +82,11 @@ public class PlaylistActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu){
         getMenuInflater().inflate(R.menu.menu_playlist,menu);
+        for(int i=0;i<menu.size();i++){
+            Drawable drawable=menu.getItem(i).getIcon();
+            if(drawable!=null)
+                drawable.setTint(0xFFFFFFFF);
+        }
         return true;
     }
 
@@ -66,23 +98,20 @@ public class PlaylistActivity extends AppCompatActivity {
             case R.id.action_playlist_refresh:return OnRefresh();
             case R.id.action_playlist_clear:return OnClearList();
             case R.id.action_view_saved_playlist:return OnViewSavedPlaylist();
+            case R.id.action_delete_music:return OnDeleteMusic(false);
             case android.R.id.home:return OnBackButton();
         }
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public boolean onContextItemSelected(MenuItem item){
-        switch (item.getItemId()){
-            case R.id.action_playlist_popup_play:PlaySelectedItem(selectedListItemIndex);return true;
-            case R.id.action_playlist_popup_del:DeleteItemFromList(GetIdOfChosenItem(selectedListItemIndex));return true;
+    public boolean OnDeleteMusic(boolean resetToFalse){
+        musicListAdapter.SetIsChoosing(resetToFalse?false:!musicListAdapter.GetIsChoosing());
+        if(musicListAdapter.GetIsChoosing()){
+            fabDelete.show();
+        }else {
+            fabDelete.hide();
         }
-        return false;
-    }
-
-    @Override
-    public void onContextMenuClosed(Menu menu){
-        selectedListItemIndex=0;
+        return true;
     }
 
     private void PlaySelectedItem(int index){
@@ -150,9 +179,10 @@ public class PlaylistActivity extends AppCompatActivity {
     }
 
     private void DisplayList(){
-        String[]from={MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.DATA,MediaStore.Audio.Media._ID};
-        int[]to={android.R.id.text1,android.R.id.text2,0};
-        listView.setAdapter(new SimpleCursorAdapter(this,android.R.layout.simple_list_item_2,dh.queryList(),from,to,1));
+        musicListAdapter.ClearList();
+        dh.UpdateDataCounts();
+        for(int i=0;i<dh.GetDataCount();i++)
+            musicListAdapter.AddList(dh.GetTitleByIndex(i),dh.GetPathByIndex(i));
     }
 
     private boolean OnRefresh(){
@@ -262,8 +292,7 @@ public class PlaylistActivity extends AppCompatActivity {
     }
 
     private int GetIdOfChosenItem(int position){
-        Cursor c=(Cursor)listView.getItemAtPosition(position);
-        return c.getInt(c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID));
+        return dh.GetIdByIndex(position);
     }
 }
 

@@ -2,6 +2,7 @@ package com.lxfly2000.lxplayer;
 
 import android.content.ContentValues;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.*;
@@ -10,14 +11,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.Date;
 
 import static com.lxfly2000.utilities.FileUtility.ReadFile;
@@ -40,8 +39,8 @@ public class SavedPlaylistActivity extends AppCompatActivity {
         fabDelete=findViewById(R.id.fabDelete);
 
         fabDelete.setOnClickListener(view -> {
-            playlistAdapter.DeleteChecked(name -> {
-                File f=new File(GetPlaylistPath()+"/"+name+".m3u");
+            playlistAdapter.DeleteCheckedItems((pos,name,value) -> {
+                File f=new File(value);
                 if(f.exists()&&f.isFile()){
                     f.delete();
                 }
@@ -53,7 +52,7 @@ public class SavedPlaylistActivity extends AppCompatActivity {
         linearLayoutManager.setOrientation(RecyclerView.VERTICAL);
         recyclerView.setLayoutManager(linearLayoutManager);
         playlistAdapter=new MyItemRecyclerViewAdapter();
-        playlistAdapter.SetOnPlaylistClickListener(name -> ChooseList(name));
+        playlistAdapter.SetOnPlaylistClickListener((pos,name,value) -> ChooseList(name,value));
         recyclerView.setAdapter(playlistAdapter);
         OnDeleteList(true);
         //填充初始数据
@@ -63,23 +62,21 @@ public class SavedPlaylistActivity extends AppCompatActivity {
                 if(f.isFile()){
                     String fn=f.getName();
                     if(fn.endsWith(".m3u")){
-                        playlistAdapter.AddList(fn.substring(0,fn.lastIndexOf('.')));
+                        playlistAdapter.AddList(fn.substring(0,fn.lastIndexOf('.')),f.getAbsolutePath());
                     }
                 }
             }
         }
         //文件名列表实际上不需要拖动排序，而是要按名称或修改时间等排序
-        //参考：https://www.digitalocean.com/community/tutorials/android-recyclerview-drag-and-drop
-        //ItemMoveCallback callback=new ItemMoveCallback(playlistAdapter);
-        //ItemTouchHelper helper=new ItemTouchHelper(callback);
-        //helper.attachToRecyclerView(recyclerView);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_saved_playlist,menu);
         for(int i=0;i<menu.size();i++){
-            menu.getItem(i).getIcon().setTint(0xFFFFFFFF);
+            Drawable drawable=menu.getItem(i).getIcon();
+            if(drawable!=null)
+                drawable.setTint(0xFFFFFFFF);
         }
         return true;
     }
@@ -127,7 +124,7 @@ public class SavedPlaylistActivity extends AppCompatActivity {
         if(plDir.exists()&&plDir.isDirectory()) {
             for (File f : plDir.listFiles()) {
                 String fn = f.getName();
-                if (name.compareTo(fn.substring(0, fn.lastIndexOf('.'))) == 0) {
+                if (savingName.compareTo(fn.substring(0, fn.lastIndexOf('.'))) == 0) {
                     Toast.makeText(this, R.string.msg_save_playlist_fail_exists, Toast.LENGTH_SHORT).show();
                     OnSaveList();
                     return;
@@ -142,7 +139,8 @@ public class SavedPlaylistActivity extends AppCompatActivity {
                 return;
             }
         }
-        playlistAdapter.AddList(savingName);
+        String path=GetPlaylistPath()+"/"+savingName+".m3u";
+        playlistAdapter.AddList(savingName,path);
         //保存到列表
         StringBuilder sb=new StringBuilder();
         ListDataHelper dh=ListDataHelper.getInstance();
@@ -150,7 +148,7 @@ public class SavedPlaylistActivity extends AppCompatActivity {
         for(int i=0;i<dh.GetDataCount();i++){
             sb.append(dh.GetPathByIndex(i)).append('\n');
         }
-        if(!WriteFile(GetPlaylistPath()+"/"+name+".m3u",sb.toString()))
+        if(!WriteFile(path,sb.toString()))
             Toast.makeText(this,R.string.msg_save_playlist_fail,Toast.LENGTH_SHORT).show();
         savingName="";
     }
@@ -164,14 +162,14 @@ public class SavedPlaylistActivity extends AppCompatActivity {
         }
     }
 
-    private void ChooseList(String name){
+    private void ChooseList(String name,String value){
         new AlertDialog.Builder(this)
                 .setIcon(R.drawable.baseline_warning_24)
                 .setTitle(R.string.msg_warning_replace_playlist)
-                .setMessage(name)
+                .setMessage(name+"\n"+value)
                 .setPositiveButton(android.R.string.ok,(dialogInterface, i) -> {
                     //替换
-                    File f=new File(GetPlaylistPath()+"/"+name+".m3u");
+                    File f=new File(value);
                     if(f.exists()&&f.isFile()) {
                         ListDataHelper dh=ListDataHelper.getInstance();
                         dh.DelAll();

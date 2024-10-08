@@ -6,6 +6,14 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class ItemMoveCallback extends ItemTouchHelper.Callback{
+    public interface OnItemMovedListener{
+        void itemMoved(int fromPos,int toPos);
+    }
+    private OnItemMovedListener itemMovedListener=null;
+    public void SetOnItemMovedListener(OnItemMovedListener listener){
+        itemMovedListener=listener;
+    }
+
     private final MyItemRecyclerViewAdapter myAdapter;
 
     public void ViewItemMoved(int fromPos, int toPos) {
@@ -19,6 +27,8 @@ public class ItemMoveCallback extends ItemTouchHelper.Callback{
             }
         }
         myAdapter.notifyItemMoved(fromPos, toPos);
+        if(itemMovedListener!=null)
+            itemMovedListener.itemMoved(fromPos,toPos);
     }
 
     public void ViewItemSelected(MyItemRecyclerViewAdapter.ItemViewHolder vh) {

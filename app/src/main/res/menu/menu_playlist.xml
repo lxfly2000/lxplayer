@@ -2,22 +2,25 @@
       xmlns:app="http://schemas.android.com/apk/res-auto"
       xmlns:tools="http://schemas.android.com/tools"
       tools:context="io.github.lxfly2000.lxplayer.PlaylistActivity">
+    <item android:id="@+id/action_view_saved_playlist"
+          android:title="@string/title_saved_playlist"
+          android:orderInCategory="100"
+          app:showAsAction="never"/>
     <item android:id="@+id/action_playlist_refresh"
           android:title="@string/menu_playlist_refresh"
-          android:orderInCategory="100"
+          android:orderInCategory="101"
           app:showAsAction="never"/>
     <item android:id="@+id/action_playlist_add"
           android:title="@string/menu_playlist_add"
-          android:orderInCategory="101"
+          android:orderInCategory="102"
           app:showAsAction="never"/>
     <item android:title="@string/menu_playlist_add_dir" android:id="@+id/action_playlist_add_dir"
-          android:orderInCategory="102" app:showAsAction="never"/>
+          android:orderInCategory="103" app:showAsAction="never"/>
+    <item android:title="@string/menu_playlist_pop_delete" android:id="@+id/action_delete_music"
+          android:orderInCategory="104"
+          android:icon="@drawable/baseline_playlist_remove_24" app:showAsAction="ifRoom"/>
     <item android:id="@+id/action_playlist_clear"
           android:title="@string/menu_playlist_clear"
-          android:orderInCategory="103"
-          app:showAsAction="never"/>
-    <item android:id="@+id/action_view_saved_playlist"
-          android:title="@string/title_saved_playlist"
-          android:orderInCategory="104"
+          android:orderInCategory="105"
           app:showAsAction="never"/>
 </menu>

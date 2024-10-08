@@ -53,7 +53,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
 
     public Cursor queryList(){
         SQLiteDatabase db=getWritableDatabase();
-        Cursor c=db.query(szTableName,null,null,null,null,null,null);
+        Cursor c=db.query(szTableName,null,null,null,null,null,MediaStore.Audio.Media._ID);
         return c;
     }
 
@@ -78,7 +78,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media.DATA};
         String[]args={path};
-        Cursor c=db.query(szTableName,cols,MediaStore.Audio.Media.DATA+"=?",args,null,null,null);
+        Cursor c=db.query(szTableName,cols,MediaStore.Audio.Media.DATA+"=?",args,null,null,MediaStore.Audio.Media._ID);
         boolean r=c.getCount()>0;
         c.close();
         return r;
@@ -88,7 +88,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media._ID,MediaStore.Audio.Media.DATA};
         String[]args={String.valueOf(id)};
-        Cursor c=db.query(szTableName,cols,MediaStore.Audio.Media._ID+"=?",args,null,null,null);
+        Cursor c=db.query(szTableName,cols,MediaStore.Audio.Media._ID+"=?",args,null,null,MediaStore.Audio.Media._ID);
         String path=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
         c.close();
         return path;
@@ -97,7 +97,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
     public String GetPathByIndex(int index){
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media.DATA};
-        Cursor c=db.query(szTableName,cols,null,null,null,null,null);
+        Cursor c=db.query(szTableName,cols,null,null,null,null,MediaStore.Audio.Media._ID);
         c.moveToPosition(index);
         String path=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
         c.close();
@@ -107,7 +107,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
     public void UpdateDataCounts(){
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media.DATA};
-        dataCounts=db.query(szTableName,cols,null,null,null,null,null).getCount();
+        dataCounts=db.query(szTableName,cols,null,null,null,null,MediaStore.Audio.Media._ID).getCount();
     }
 
     public int GetDataCount(){
@@ -117,7 +117,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
     public String GetTitleByIndex(int index){
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media.TITLE};
-        Cursor c=db.query(szTableName,cols,null,null,null,null,null);
+        Cursor c=db.query(szTableName,cols,null,null,null,null,MediaStore.Audio.Media._ID);
         c.moveToPosition(index);
         String title=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
         c.close();
@@ -127,7 +127,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
     public int GetIdByIndex(int index){
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media._ID};
-        Cursor c=db.query(szTableName,cols,null,null,null,null,null);
+        Cursor c=db.query(szTableName,cols,null,null,null,null,MediaStore.Audio.Media._ID);
         c.moveToPosition(index);
         int id=c.getInt(c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID));
         c.close();
@@ -137,10 +137,35 @@ public class ListDataHelper extends SQLiteOpenHelper{
     public long GetAlbumIdByIndex(int index){
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media.ALBUM_ID};
-        Cursor c=db.query(szTableName,cols,null,null,null,null,null);
+        Cursor c=db.query(szTableName,cols,null,null,null,null,MediaStore.Audio.Media._ID);
         c.moveToPosition(index);
         long id=c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID));
         c.close();
         return id;
+    }
+
+    public void SwapIndex(int a,int b){
+        SQLiteDatabase db=getWritableDatabase();
+        Cursor c=db.query(szTableName,null,null,null,null,null,MediaStore.Audio.Media._ID);
+        c.moveToPosition(a);
+        long idA=c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID));
+        String titleA=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
+        long albumIdA=c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID));
+        String dataA=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
+        c.moveToPosition(b);
+        long idB=c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID));
+        String titleB=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
+        long albumIdB=c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID));
+        String dataB=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
+        ContentValues contentValues=new ContentValues();
+        contentValues.put(MediaStore.Audio.Media.TITLE,titleB);
+        contentValues.put(MediaStore.Audio.Media.ALBUM_ID,albumIdB);
+        contentValues.put(MediaStore.Audio.Media.DATA,dataB);
+        db.update(szTableName,contentValues,MediaStore.Audio.Media._ID+"=?",new String[]{String.valueOf(idA)});
+        contentValues.clear();
+        contentValues.put(MediaStore.Audio.Media.TITLE,titleA);
+        contentValues.put(MediaStore.Audio.Media.ALBUM_ID,albumIdA);
+        contentValues.put(MediaStore.Audio.Media.DATA,dataA);
+        db.update(szTableName,contentValues,MediaStore.Audio.Media._ID+"=?",new String[]{String.valueOf(idB)});
     }
 }
