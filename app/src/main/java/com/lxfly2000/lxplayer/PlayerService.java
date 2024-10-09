@@ -34,7 +34,8 @@ public class PlayerService extends Service {
     public static final String ACTION_UPDATE_SELECTED_INDEX=BuildConfig.APPLICATION_ID+".UpdateSelectedIndex";
     public static final String ACTION_UPDATE_BUTTON_PLAY=BuildConfig.APPLICATION_ID+".UpdateButtonPlay";
     private final MediaPlayer.OnCompletionListener nextMusicListener= mediaPlayer -> {
-        if(!IsLoopOn())OnChangeMusic(true);
+        if(!IsLoopOn())
+            OnChangeMusic(true);
         Play();
         UpdateNotificationBar(false);
     };

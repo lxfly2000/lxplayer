@@ -190,7 +190,12 @@ public class MainActivity extends AppCompatActivity {
                 playerService=((PlayerService.LocalBinder)iBinder).getService();
                 if(needLoadPreferences) {
                     playerService.SetKeepSpeed(playerPreferences.getBoolean(keyKeepSpeed, false));
-                    playerService.SetPlayIndex(playerPreferences.getInt(PlayerService.keyLastPlayIndex, -1));
+                    int lastIndex=playerPreferences.getInt(PlayerService.keyLastPlayIndex,-1);
+                    if(lastIndex>=dbHelper.GetDataCount())
+                        lastIndex=0;
+                    if(lastIndex>=dbHelper.GetDataCount())
+                        lastIndex=-1;
+                    playerService.SetPlayIndex(lastIndex);
                 }
                 UpdateInterfaces(-1);
             }
@@ -374,6 +379,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if(resultCode==RESULT_OK){
                     PlayerPlayMusic(data.getIntExtra(PlayerService.keySelectedIndex,0));
+                    playerService.OnCurrentPlayingChanged();
                 }
                 break;
         }
