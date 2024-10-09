@@ -95,17 +95,16 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
         holder.SetChecked(localDataSet.get(position).checked);
         holder.SetIsChoosing(isEditing);
         holder.SetOnItemClickListener(view -> {
-            if(!isEditing&&onPlaylistSelectedListener!=null)
-                onPlaylistSelectedListener.onPlaylistSelected(position,localDataSet.get(position).textName,localDataSet.get(position).textValue);
+            //注意此处不能用position
+            if(!isEditing&&onPlaylistSelectedListener!=null) {
+                int newPosition= holder.getAdapterPosition();
+                onPlaylistSelectedListener.onPlaylistSelected(newPosition,localDataSet.get(newPosition).textName, localDataSet.get(newPosition).textValue);
+            }
         });
         holder.SetOnCheckClickedListener(view -> {
-            localDataSet.get(position).checked=((CheckBox)view).isChecked();
-            StringBuilder sb=new StringBuilder();
-            sb.append("[");
-            for(int i=0;i<localDataSet.size();i++)
-                sb.append(localDataSet.get(i).checked?"#":".");
-            sb.append("]");
-            Log.d("Checks",sb.toString());
+            //注意此处不能用position
+            int newPosition= holder.getAdapterPosition();
+            localDataSet.get(newPosition).checked=((CheckBox)view).isChecked();
         });
     }
 

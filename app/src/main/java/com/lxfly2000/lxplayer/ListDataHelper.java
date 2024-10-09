@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.MediaStore;
+import android.util.Log;
 
 //用于存储播放列表
 public class ListDataHelper extends SQLiteOpenHelper{
@@ -53,7 +54,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
 
     public Cursor queryList(){
         SQLiteDatabase db=getWritableDatabase();
-        Cursor c=db.query(szTableName,null,null,null,null,null,MediaStore.Audio.Media._ID);
+        Cursor c=db.query(szTableName,null,null,null,null,null,null);
         return c;
     }
 
@@ -78,7 +79,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media.DATA};
         String[]args={path};
-        Cursor c=db.query(szTableName,cols,MediaStore.Audio.Media.DATA+"=?",args,null,null,MediaStore.Audio.Media._ID);
+        Cursor c=db.query(szTableName,cols,MediaStore.Audio.Media.DATA+"=?",args,null,null,null);
         boolean r=c.getCount()>0;
         c.close();
         return r;
@@ -88,7 +89,8 @@ public class ListDataHelper extends SQLiteOpenHelper{
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media._ID,MediaStore.Audio.Media.DATA};
         String[]args={String.valueOf(id)};
-        Cursor c=db.query(szTableName,cols,MediaStore.Audio.Media._ID+"=?",args,null,null,MediaStore.Audio.Media._ID);
+        Cursor c=db.query(szTableName,cols,MediaStore.Audio.Media._ID+"=?",args,null,null,null);
+        c.moveToFirst();
         String path=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
         c.close();
         return path;
@@ -97,7 +99,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
     public String GetPathByIndex(int index){
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media.DATA};
-        Cursor c=db.query(szTableName,cols,null,null,null,null,MediaStore.Audio.Media._ID);
+        Cursor c=db.query(szTableName,cols,null,null,null,null,null);
         c.moveToPosition(index);
         String path=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
         c.close();
@@ -107,7 +109,10 @@ public class ListDataHelper extends SQLiteOpenHelper{
     public void UpdateDataCounts(){
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media.DATA};
-        dataCounts=db.query(szTableName,cols,null,null,null,null,MediaStore.Audio.Media._ID).getCount();
+        Cursor c=db.query(szTableName,cols,null,null,null,null,null);
+        int count=c.getCount();
+        c.close();
+        dataCounts=count;
     }
 
     public int GetDataCount(){
@@ -117,7 +122,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
     public String GetTitleByIndex(int index){
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media.TITLE};
-        Cursor c=db.query(szTableName,cols,null,null,null,null,MediaStore.Audio.Media._ID);
+        Cursor c=db.query(szTableName,cols,null,null,null,null,null);
         c.moveToPosition(index);
         String title=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
         c.close();
@@ -127,17 +132,43 @@ public class ListDataHelper extends SQLiteOpenHelper{
     public int GetIdByIndex(int index){
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media._ID};
-        Cursor c=db.query(szTableName,cols,null,null,null,null,MediaStore.Audio.Media._ID);
+        Cursor c=db.query(szTableName,cols,null,null,null,null,null);
         c.moveToPosition(index);
         int id=c.getInt(c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID));
         c.close();
         return id;
     }
 
+    public int GetIdByPath(String path){
+        SQLiteDatabase db=getWritableDatabase();
+        String[]cols={MediaStore.Audio.Media._ID,MediaStore.Audio.Media.DATA};
+        Cursor c=db.query(szTableName,cols,MediaStore.Audio.Media.DATA+"=?",new String[]{path},null,null,null);
+        c.moveToFirst();
+        int id=c.getInt(c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID));
+        c.close();
+        return id;
+    }
+
+    public int GetIndexByPath(String path){
+        SQLiteDatabase db=getWritableDatabase();
+        String[]cols={MediaStore.Audio.Media.DATA};
+        Cursor c=db.query(szTableName,cols,null,null,null,null,null);
+        for(c.moveToFirst();!c.isAfterLast();c.moveToNext()){
+            String p=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
+            if(p.compareTo(path)==0) {
+                int pos=c.getPosition();
+                c.close();
+                return pos;
+            }
+        }
+        c.close();
+        return -1;
+    }
+
     public long GetAlbumIdByIndex(int index){
         SQLiteDatabase db=getWritableDatabase();
         String[]cols={MediaStore.Audio.Media.ALBUM_ID};
-        Cursor c=db.query(szTableName,cols,null,null,null,null,MediaStore.Audio.Media._ID);
+        Cursor c=db.query(szTableName,cols,null,null,null,null,null);
         c.moveToPosition(index);
         long id=c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID));
         c.close();
@@ -146,7 +177,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
 
     public void SwapIndex(int a,int b){
         SQLiteDatabase db=getWritableDatabase();
-        Cursor c=db.query(szTableName,null,null,null,null,null,MediaStore.Audio.Media._ID);
+        Cursor c=db.query(szTableName,null,null,null,null,null,null);
         c.moveToPosition(a);
         long idA=c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID));
         String titleA=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));

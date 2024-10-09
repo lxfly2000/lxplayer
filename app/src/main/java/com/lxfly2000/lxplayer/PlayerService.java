@@ -80,7 +80,8 @@ public class PlayerService extends Service {
         // Return the communication channel to the service.
         dh=ListDataHelper.getInstance(getApplicationContext());
         player=new MediaPlayer();
-        if(dh.GetDataCount()>0)SetPlayIndex(playlistCurrentPos);
+        if(dh.GetDataCount()>0)
+            SetPlayIndex(playlistCurrentPos);
         player.setOnCompletionListener(nextMusicListener);
         IntentFilter fiNotification=new IntentFilter();
         fiNotification.addAction(ACTION_FORWARD);
@@ -216,7 +217,8 @@ public class PlayerService extends Service {
             player.pause();
         if(stop)
             SetPlayingPos_Ms(0);
-        UpdateNotificationBar(false);
+        if(GetListCurrentPos()<dh.GetDataCount())
+            UpdateNotificationBar(false);
     }
 
     public void SetLoop(boolean loop){
@@ -249,8 +251,10 @@ public class PlayerService extends Service {
         if(isRandom){
             SetPlayIndex((int)(Math.random()*dh.GetDataCount()));
         }else {
-            if(isForward)SetPlayIndex((playlistCurrentPos+1)%dh.GetDataCount());
-            else SetPlayIndex((playlistCurrentPos+dh.GetDataCount()-1)%dh.GetDataCount());
+            if(isForward)
+                SetPlayIndex((playlistCurrentPos+1)%dh.GetDataCount());
+            else
+                SetPlayIndex((playlistCurrentPos+dh.GetDataCount()-1)%dh.GetDataCount());
         }
         if(playing)Play();
         Intent intent=new Intent(ACTION_UPDATE_SELECTED_INDEX);

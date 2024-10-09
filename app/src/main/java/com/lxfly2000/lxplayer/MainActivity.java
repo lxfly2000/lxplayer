@@ -226,9 +226,14 @@ public class MainActivity extends AppCompatActivity {
         UpdateSeekBar();
         if(playerService.IsPlaying())SetTimerOn(true);
         if(dbHelper.GetDataCount()>0) {
-            textTitle.setText(dbHelper.GetTitleByIndex(musicIndex == -1 ? playerService.GetListCurrentPos() : musicIndex));
-            imageView.setImageBitmap(ArtworkUtils.getArtwork(getApplicationContext(), dbHelper.GetTitleByIndex(playerService.GetListCurrentPos()),
-                    dbHelper.GetIdByIndex(playerService.GetListCurrentPos()), dbHelper.GetAlbumIdByIndex(playerService.GetListCurrentPos()), true));
+            if(musicIndex==-1){
+                musicIndex=playerService.GetListCurrentPos();
+                if(musicIndex>=dbHelper.GetDataCount())
+                    return;
+            }
+            textTitle.setText(dbHelper.GetTitleByIndex(musicIndex));
+            imageView.setImageBitmap(ArtworkUtils.getArtwork(getApplicationContext(), dbHelper.GetTitleByIndex(musicIndex),
+                    dbHelper.GetIdByIndex(musicIndex), dbHelper.GetAlbumIdByIndex(musicIndex), true));
         }
     }
 
@@ -375,8 +380,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void PlayerPlayMusic(int musicIndex){
-        if(dbHelper.GetDataCount()==0)return;
         playerService.SetPlayIndex(musicIndex);
+        if(dbHelper.GetDataCount()==0)
+            return;
         playerService.Play();
         UpdateInterfaces(-1);
         SetTimerOn(true);
@@ -384,6 +390,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void OnButtonPlay(boolean stop){
         if(stop||playerService.IsPlaying()){
+            if(playerService.GetListCurrentPos()>=dbHelper.GetDataCount()){
+                playerService.SetPlayIndex(0);
+            }
             playerService.Pause(stop);
             UpdateInterfaces(-1);
             SetTimerOn(false);

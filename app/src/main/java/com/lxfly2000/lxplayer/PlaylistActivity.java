@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -59,7 +60,7 @@ public class PlaylistActivity extends AppCompatActivity {
         listRecycler.setLayoutManager(linearLayoutManager);
         musicListAdapter=new MyItemRecyclerViewAdapter();
         OnDeleteMusic(true);
-        musicListAdapter.SetOnPlaylistClickListener((pos, name, value) -> PlaySelectedItem(pos));
+        musicListAdapter.SetOnPlaylistClickListener((pos,name, value) -> PlaySelectedItem(pos));
         listRecycler.setAdapter(musicListAdapter);
         musicListAdapter.SetShowValue(true);
         dh=ListDataHelper.getInstance(this);

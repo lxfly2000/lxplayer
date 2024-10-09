@@ -1,11 +1,14 @@
 package com.lxfly2000.lxplayer;
 
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.*;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -94,19 +97,36 @@ public class SavedPlaylistActivity extends AppCompatActivity {
     private void OnSaveList(){
         OnDeleteList(true);
         EditText editText=new EditText(this);
-        new AlertDialog.Builder(this)
+        AlertDialog dlg=new AlertDialog.Builder(this)
                 .setTitle(R.string.title_enter_name)
                 .setPositiveButton(android.R.string.ok,(dialogInterface, i) -> SaveList(editText.getText().toString()))
                 .setNegativeButton(android.R.string.cancel,(dialogInterface, i) -> savingName="")
                 .setCancelable(false)
                 .setView(editText)
-                .show();
+                .create();
         if(!savingName.isEmpty()){
             editText.setText(savingName);
         }else{
             //https://www.runoob.com/java/java-date-time.html
             editText.setText(getString(R.string.file_playlist_default_name,new SimpleDateFormat("yyyy-MM-dd hh_mm_ss").format(new Date())));
         }
+        editText.setSingleLine();
+        editText.setFocusableInTouchMode(true);
+        editText.setSelectAllOnFocus(true);
+        dlg.setOnShowListener(dialog -> {
+            editText.requestFocus();
+            if(Build.VERSION.SDK_INT>= Build.VERSION_CODES.R){
+                editText.getWindowInsetsController().show(WindowInsets.Type.ime());
+            }
+        });
+        dlg.show();
+        editText.setOnKeyListener((v, keyCode, event) -> {
+            if(keyCode==KeyEvent.KEYCODE_ENTER&&event.getAction()==KeyEvent.ACTION_UP){
+                dlg.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
+                return true;
+            }
+            return false;
+        });
     }
 
     static final String invalidChar="\\/:*?\"<>|\r\n\t";
