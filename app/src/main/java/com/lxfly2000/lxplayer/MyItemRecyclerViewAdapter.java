@@ -1,5 +1,6 @@
 package com.lxfly2000.lxplayer;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,8 +47,9 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
             rootView.setOnClickListener(listener);
         }
 
-        public void SetOnCheckChangedListener(CompoundButton.OnCheckedChangeListener listener){
-            checkBox.setOnCheckedChangeListener(listener);
+        public void SetOnCheckClickedListener(View.OnClickListener listener){
+            //在RecyclerView的item滑动过程中，若使用OnCheckChanged监听状态会造成重复调用导致状态错乱
+            checkBox.setOnClickListener(listener);
         }
     }
 
@@ -96,7 +98,15 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
             if(!isEditing&&onPlaylistSelectedListener!=null)
                 onPlaylistSelectedListener.onPlaylistSelected(position,localDataSet.get(position).textName,localDataSet.get(position).textValue);
         });
-        holder.SetOnCheckChangedListener((compoundButton, b) -> localDataSet.get(position).checked=b);
+        holder.SetOnCheckClickedListener(view -> {
+            localDataSet.get(position).checked=((CheckBox)view).isChecked();
+            StringBuilder sb=new StringBuilder();
+            sb.append("[");
+            for(int i=0;i<localDataSet.size();i++)
+                sb.append(localDataSet.get(i).checked?"#":".");
+            sb.append("]");
+            Log.d("Checks",sb.toString());
+        });
     }
 
     @Override

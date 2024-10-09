@@ -157,6 +157,7 @@ public class ListDataHelper extends SQLiteOpenHelper{
         String titleB=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
         long albumIdB=c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID));
         String dataB=c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
+        c.close();
         ContentValues contentValues=new ContentValues();
         contentValues.put(MediaStore.Audio.Media.TITLE,titleB);
         contentValues.put(MediaStore.Audio.Media.ALBUM_ID,albumIdB);
